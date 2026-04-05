@@ -224,6 +224,14 @@
                               ></app-b-checkbox>
                             }
                           </div>
+                          @if (
+                            form.get('target_answer_options')?.touched &&
+                            form.get('target_answer_options')?.hasError('requiredAnswers')
+                          ) {
+                            <p class="mt-2 text-xs text-red-500 font-medium">
+                              Please select at least one answer option.
+                            </p>
+                          }
                         </div>
                       }
                     </div>

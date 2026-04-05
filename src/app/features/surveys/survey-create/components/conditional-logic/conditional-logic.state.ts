@@ -19,6 +19,17 @@ export class ConditionalLogicStateService {
   private readonly router = inject(Router);
 
   readonly activeSurveyId = signal<string | null>(null);
+  private readonly route = inject(ActivatedRoute);
+
+  readonly standaloneMode = computed(() => {
+    // Traverse up to find 'id' parameter in any parent route
+    let currentRoute: ActivatedRoute | null = this.route;
+    while (currentRoute) {
+      if (currentRoute.snapshot.paramMap.get('id')) return false;
+      currentRoute = currentRoute.parent;
+    }
+    return true;
+  });
 
   // Standalone mode survey list
   readonly surveySearch = signal('');
@@ -30,6 +41,12 @@ export class ConditionalLogicStateService {
   }));
 
   readonly surveysResource = this.surveyService.getSurveys(this.surveyParams);
+
+  readonly surveyOptions = computed(() => {
+    const data = this.surveysResource.value();
+    if (!data?.data) return [];
+    return data.data.map((s: any) => ({ label: s.name, value: s.id }));
+  });
 
   // Active survey data
   readonly surveyResource = httpResource<any>(() => {
@@ -109,7 +126,11 @@ export class ConditionalLogicStateService {
     this.allQuestions.set(allQs);
   }
 
-  private mapDomainToTreeNode(domain: any, allQuestionsRef: any[], parentDomainIds: string[] = []): TreeNode {
+  private mapDomainToTreeNode(
+    domain: any,
+    allQuestionsRef: any[],
+    parentDomainIds: string[] = [],
+  ): TreeNode {
     const currentDomainId = `domain_${domain.id}`;
     const domainIds = [...parentDomainIds, currentDomainId];
 
@@ -166,17 +187,29 @@ export class ConditionalLogicStateService {
       isEditing: [isEditing],
     });
 
+    // Add custom validator AFTER group is initialized to avoid ReferenceError
+    group.get('target_answer_options')?.setValidators([
+      (control: any) => {
+        const actionType = group.get('ui_action_type')?.value;
+        if (actionType === 'limited_answer' && (!control.value || control.value.length === 0)) {
+          return { requiredAnswers: true };
+        }
+        return null;
+      },
+    ]);
+
     if (!isEditing) {
       group.disable();
     }
 
+    // Force re-validation of answers when action type changes
+    group.get('ui_action_type')?.valueChanges.subscribe(() => {
+      group.get('target_answer_options')?.updateValueAndValidity();
+    });
+
     group
       .get('ui_action_type')
-      ?.valueChanges.pipe(
-        startWith(uiActionType),
-        distinctUntilChanged(),
-        pairwise(),
-      )
+      ?.valueChanges.pipe(startWith(uiActionType), distinctUntilChanged(), pairwise())
       .subscribe(([oldVal, newVal]) => {
         if (oldVal && newVal && oldVal !== newVal && group.get('isEditing')?.value) {
           group.patchValue(
@@ -201,7 +234,10 @@ export class ConditionalLogicStateService {
   }
 
   getTriggerQuestionOptions(currentRuleTriggerId: number | null): any[] {
-    const options = this.currentSubdomainQuestions().map((q: any) => ({ label: q.text, value: q.id }));
+    const options = this.currentSubdomainQuestions().map((q: any) => ({
+      label: q.text,
+      value: q.id,
+    }));
     if (currentRuleTriggerId && !options.find((opt) => opt.value === currentRuleTriggerId)) {
       const q = this.allQuestions().find((q) => q.id === currentRuleTriggerId);
       if (q) {
@@ -249,7 +285,9 @@ export class ConditionalLogicStateService {
       action_type: backendActionType,
       target_question_id: targetId,
       target_question_ids: val.target_question_ids?.length ? val.target_question_ids : undefined,
-      target_answer_options: val.target_answer_options?.length ? val.target_answer_options : undefined,
+      target_answer_options: val.target_answer_options?.length
+        ? val.target_answer_options
+        : undefined,
     };
 
     if (val.id) {
@@ -258,10 +296,19 @@ export class ConditionalLogicStateService {
           form.patchValue({ isEditing: false });
           form.disable();
           this.rulesForms.set([...rules]);
-          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Rule updated' });
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Rule updated',
+          });
           this.surveyResource?.reload();
         },
-        error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Could not update' }),
+        error: () =>
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Could not update',
+          }),
       });
     } else {
       this.logicService.createLogicRule(triggerQId, payload).subscribe({
@@ -269,10 +316,19 @@ export class ConditionalLogicStateService {
           form.patchValue({ id: res.data?.id || res.id, isEditing: false });
           form.disable();
           this.rulesForms.set([...rules]);
-          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Rule created' });
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Rule created',
+          });
           this.surveyResource?.reload();
         },
-        error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Could not create' }),
+        error: () =>
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Could not create',
+          }),
       });
     }
   }
@@ -287,10 +343,19 @@ export class ConditionalLogicStateService {
           rules.splice(index, 1);
           if (rules.length === 0) rules.push(this.createRuleForm(null));
           this.rulesForms.set([...rules]);
-          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Rule deleted' });
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Rule deleted',
+          });
           this.surveyResource?.reload();
         },
-        error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Could not delete' }),
+        error: () =>
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Could not delete',
+          }),
       });
     } else {
       rules.splice(index, 1);

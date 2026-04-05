@@ -1,33 +1,53 @@
 <div class="space-y-8">
-  <div class="rounded-xl border bg-[#F9FAFB] border-[#E5E7EB] p-6 custom-shadow">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="col-span-1 md:col-span-2">
-        <label for="domain_subdomain_tree" class="block font-semibold text-black-400 mb-1.5"
-          >Domain & Subdomain <span class="text-red-500">*</span></label
-        >
-        <p-treeSelect
-          [(ngModel)]="selectedTreeNode"
-          id="domain_subdomain_tree"
-          [options]="domainTreeNodes()"
-          class="w-full"
-          appendTo="body"
-          placeholder="Select Domain / Subdomain"
+  <!-- Survey & Domain Selection / Filtering -->
+  <div class="mb-8 space-y-8">
+    <!-- Survey Selection (Standalone only) -->
+    @if (standaloneMode()) {
+      <div class="flex-1 rounded-xl border bg-[#F9FAFB] border-[#E5E7EB] p-6 custom-shadow">
+        <label class="block font-semibold text-black-400 mb-1.5 text-sm uppercase tracking-wider">
+          Survey Name <span class="text-red-500">*</span>
+        </label>
+        <app-b-select
+          [options]="surveyOptions()"
+          [ngModel]="selectedSurveyId()"
+          (ngModelChange)="onSurveyChange($event)"
           [filter]="true"
-          filterBy="label,searchTitle"
-          filterPlaceholder="Search domain, subdomain or question..."
-          filterMode="lenient"
-          (onNodeSelect)="onNodeSelect($event)"
-        ></p-treeSelect>
+          [virtualScroll]="true"
+          [loading]="surveysResource.isLoading()"
+          (onSearch)="onSurveySearch($event)"
+          (onScrollPagination)="onSurveyScroll($event)"
+          placeholder="Select survey name.."
+        ></app-b-select>
       </div>
+    }
+
+    <div class="flex-1 rounded-xl border bg-[#F9FAFB] border-[#E5E7EB] p-6 custom-shadow relative">
+      <label
+        for="domain_subdomain_tree"
+        class="block font-semibold text-black-400 mb-1.5 text-sm uppercase tracking-wider"
+        >Domain & Subdomain <span class="text-red-500">*</span></label
+      >
+      <p-treeSelect
+        [(ngModel)]="selectedTreeNode"
+        id="domain_subdomain_tree"
+        [options]="domainTreeNodes()"
+        class="w-full h-[45px]!"
+        appendTo="body"
+        [disabled]="!selectedSurveyId()"
+        placeholder="Select Domain / Subdomain"
+        [filter]="true"
+        filterBy="label,searchTitle"
+        filterPlaceholder="Search domain, subdomain or question..."
+        filterMode="lenient"
+        (onNodeSelect)="onNodeSelect($event)"
+      ></p-treeSelect>
     </div>
   </div>
 
   @if (rulesForms().length > 0) {
     <div class="space-y-6">
       @for (ruleForm of rulesForms(); track ruleForm; let i = $index) {
-        <div
-          class="bg-white rounded-xl border border-blue-200 p-6 custom-shadow relative"
-        >
+        <div class="bg-white rounded-xl border border-blue-200 p-6 custom-shadow relative">
           <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-bold text-blue-500">Conditional Logic</h3>
             <div class="flex items-center gap-2">
@@ -61,9 +81,9 @@
 
           <form [formGroup]="ruleForm" class="space-y-6 text-black-400">
             <div class="flex items-start gap-4">
-              <div class="mt-2 text-xs font-semibold px-2 py-1 bg-blue-50 text-blue-500 rounded"
-                >If</div
-              >
+              <div class="mt-2 text-xs font-semibold px-2 py-1 bg-blue-50 text-blue-500 rounded">
+                If
+              </div>
               <div class="flex-1">
                 <app-b-select
                   id="trigger_question_{{ i }}"
@@ -76,9 +96,11 @@
             </div>
 
             <div class="flex items-start gap-4">
-              <div class="mt-2 text-xs font-semibold px-2 py-1 bg-yellow-50 text-yellow-600 rounded"
-                >Has</div
+              <div
+                class="mt-2 text-xs font-semibold px-2 py-1 bg-yellow-50 text-yellow-600 rounded"
               >
+                Has
+              </div>
               <div class="flex-1">
                 <app-b-select
                   [id]="'trigger_answer_' + i"
@@ -91,9 +113,9 @@
             </div>
 
             <div class="flex items-start gap-4">
-              <div class="mt-2 text-xs font-semibold px-2 py-1 bg-green-50 text-green-600 rounded"
-                >Then</div
-              >
+              <div class="mt-2 text-xs font-semibold px-2 py-1 bg-green-50 text-green-600 rounded">
+                Then
+              </div>
               <div class="flex-1">
                 <label class="block text-sm font-medium text-gray-703 mb-3">Action</label>
                 <div class="flex flex-wrap items-center gap-6">
@@ -105,7 +127,9 @@
                         formControlName="ui_action_type"
                         class="radio-btn"
                       ></p-radioButton>
-                      <label [for]="'action_' + i + '_' + opt.value" class="text-sm text-[#6F6F6F]"
+                      <label
+                        [for]="'action_' + i + '_' + opt.value"
+                        class="text-sm text-[#6F6F6F]"
                         >{{ opt.label }}</label
                       >
                     </div>
@@ -137,7 +161,9 @@
                       <app-b-select
                         [id]="'target_question_id_' + i"
                         label="Apply Action to Question"
-                        [options]="getFilteredTargetOptions(ruleForm.get('trigger_question_id')?.value)"
+                        [options]="
+                          getFilteredTargetOptions(ruleForm.get('trigger_question_id')?.value)
+                        "
                         [ngModel]="getTargetId(ruleForm)"
                         (ngModelChange)="setTargetId(ruleForm, $event)"
                         [ngModelOptions]="{ standalone: true }"
@@ -167,6 +193,14 @@
                             ></app-b-checkbox>
                           }
                         </div>
+                        @if (
+                          ruleForm.get('target_answer_options')?.touched &&
+                          ruleForm.get('target_answer_options')?.hasError('requiredAnswers')
+                        ) {
+                          <p class="mt-2 text-xs text-red-500 font-medium">
+                            Please select at least one answer option.
+                          </p>
+                        }
                       </div>
                     }
                   </div>
@@ -197,13 +231,15 @@
     </button>
     <div class="flex items-center gap-3">
       @if (selectedTreeNode() && currentSubdomainQuestions().length > 0) {
-        <button
-          type="button"
-          class="flex items-center gap-2 bg-[#16A34A] text-white px-6.5 py-3 rounded-2xl hover:bg-green-700 transition-colors font-medium"
-          (click)="addRule()"
-        >
-          Add New Condition
-        </button>
+        @if (!isAnyRuleEditing()) {
+          <button
+            type="button"
+            class="flex items-center gap-2 bg-[#16A34A] text-white px-6.5 py-3 rounded-2xl hover:bg-green-700 transition-colors font-medium"
+            (click)="addRule()"
+          >
+            Add New Condition
+          </button>
+        }
         <button
           type="button"
           class="flex items-center gap-2 px-9.5 py-3 rounded-lg bg-primary-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors font-medium"

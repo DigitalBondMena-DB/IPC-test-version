@@ -59,22 +59,8 @@ export class LogicReviewComponent {
 
   readonly surveysResource = this.state.surveysResource;
   readonly selectedSurveyId = this.state.activeSurveyId;
-
-  readonly standaloneMode = computed(() => {
-    // Check if ID exists in route hierarchy
-    let currentRoute: ActivatedRoute | null = this.route;
-    while (currentRoute) {
-      if (currentRoute.snapshot.paramMap.get('id')) return false;
-      currentRoute = currentRoute.parent;
-    }
-    return true;
-  });
-
-  readonly surveyOptions = computed(() => {
-    const data = this.surveysResource.value();
-    if (!data?.data) return [];
-    return data.data.map((s: any) => ({ label: s.name, value: s.id }));
-  });
+  readonly standaloneMode = this.state.standaloneMode;
+  readonly surveyOptions = this.state.surveyOptions;
 
   ngOnInit() {
     // Check for domain_id in query params to pre-filter
@@ -198,7 +184,10 @@ export class LogicReviewComponent {
     } else {
       selected.push(ans);
     }
-    form.patchValue({ target_answer_options: selected });
+    const ctrl = form.get('target_answer_options');
+    ctrl?.patchValue(selected);
+    ctrl?.markAsTouched();
+    ctrl?.updateValueAndValidity();
   }
 
   onSkip() {

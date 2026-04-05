@@ -52,6 +52,27 @@ export class LogicFormComponent implements OnInit {
   alertTypeOptions = this.state.alertTypeOptions;
   isAnyRuleEditing = this.state.isAnyRuleEditing;
 
+  readonly standaloneMode = this.state.standaloneMode;
+  readonly surveyOptions = this.state.surveyOptions;
+  readonly surveysResource = this.state.surveysResource;
+  readonly selectedSurveyId = this.state.activeSurveyId;
+
+  onSurveyChange(id: string) {
+    this.state.setSurveyId(id);
+    // Re-initialize with one empty form after state reset
+    this.rulesForms.set([this.state.createRuleForm(null)]);
+  }
+
+  onSurveySearch(search: string) {
+    this.state.surveySearch.set(search);
+    this.state.surveyPage.set(1);
+  }
+
+  onSurveyScroll(event: any) {
+    if (this.surveysResource.isLoading()) return;
+    this.state.surveyPage.update((p) => p + 1);
+  }
+
   ngOnInit() {
     // If no rules are loaded, provide one empty form as initial state
     if (this.rulesForms().length === 0) {
@@ -168,7 +189,10 @@ export class LogicFormComponent implements OnInit {
     } else {
       selected.push(ans);
     }
-    form.patchValue({ target_answer_options: selected });
+    const ctrl = form.get('target_answer_options');
+    ctrl?.patchValue(selected);
+    ctrl?.markAsTouched();
+    ctrl?.updateValueAndValidity();
   }
 
   onSaveAndBack() {
