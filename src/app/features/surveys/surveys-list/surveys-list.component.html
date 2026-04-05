@@ -1,0 +1,31 @@
+<section class="surveys-container">
+  <app-b-page-header
+    title="Surveys"
+    [showSearch]="true"
+    [showDateFilter]="true"
+    createButtonLabel="Create New Survey"
+    (searchChange)="onSearch($event)"
+    (dateChange)="onDateChange($event)"
+    (createClick)="onCreate()"
+  />
+  <div class="px-layout-x">
+    <div class="table-card">
+      <app-b-data-table
+        [columns]="columns"
+        [data]="surveysResource.value()?.data ?? []"
+        [totalRecords]="surveysResource.value()?.total ?? 0"
+        [loading]="isLoading()"
+        [hasError]="hasError()"
+        [page]="params().page"
+        [rows]="params().per_page"
+        (pageChange)="onPageChange($event)"
+        (rowsChange)="onRowsChange($event)"
+        (sortChange)="onSortChange($event)"
+        (toggleChange)="onToggle($event)"
+        (editClick)="onEdit($event)"
+        (duplicateClick)="onDuplicate($event)"
+        (retryLoad)="surveysResource.reload()"
+      />
+    </div>
+  </div>
+</section>

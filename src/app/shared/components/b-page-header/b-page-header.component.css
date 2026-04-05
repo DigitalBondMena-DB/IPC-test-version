@@ -1,0 +1,141 @@
+.filters-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-title {
+  font-weight: 600;
+  font-size: 28px;
+  color: #343c6a;
+  white-space: nowrap;
+}
+
+/* Search */
+.search-container {
+  position: relative;
+  flex: 0 1 420px;
+  min-width: 300px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #b0b0b0;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 16px 10px 32px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #333;
+  background: #fff;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.search-input::placeholder {
+  color: #b0b0b0;
+}
+
+.search-input:focus {
+  border-color: var(--color-primary-500, #197bfd);
+  box-shadow: 0 0 0 3px rgba(25, 123, 253, 0.1);
+}
+
+/* Create Button */
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: var(--color-primary-500, #197bfd);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
+  cursor: pointer;
+}
+
+.create-btn:hover {
+  background: #1565d8;
+}
+
+.create-btn:active {
+  transform: scale(0.98);
+}
+
+.calendar-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #b0b0b0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.daterange-input {
+  width: 100%;
+  padding: 10px 16px 10px 42px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #333;
+  background: #fff;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.daterange-input:focus {
+  border-color: var(--color-primary-500, #197bfd);
+  box-shadow: 0 0 0 3px rgba(25, 123, 253, 0.1);
+}
+
+.md-drppicker {
+  display: flex !important;
+  .ranges button {
+    color: var(--color-black-400);
+    &:hover {
+      background-color: var(--color-primary-500, #197bfd) !important;
+      color: var(--color-white);
+    }
+  }
+}
+.drp-animate .available,
+.table-condensed tbody {
+  color: var(--color-black-400);
+}

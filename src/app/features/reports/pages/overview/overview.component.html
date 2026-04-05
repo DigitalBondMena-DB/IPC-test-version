@@ -1,0 +1,46 @@
+<div class="flex flex-col gap-6">
+  <!-- Header -->
+  <div class="flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-[#202224]">Overview</h1>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+    <!-- Main Content (Left) -->
+    <div class="xl:col-span-3 flex flex-col gap-8">
+      <!-- Metrics Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        @for (card of cards(); track card.label) {
+          <div
+            class="bg-white p-5 rounded-2xl shadow-sm border border-gray-50 flex flex-col justify-between h-32 relative group transition-all hover:shadow-md"
+          >
+            <div class="flex justify-between items-start">
+              <span class="text-gray-400 font-medium">{{ card.label }}</span>
+              <div class="p-2.5 rounded-lg" [ngClass]="[card.iconBgClass, card.iconTextClass]">
+                <lucide-icon [name]="card.icon" size="14" />
+              </div>
+            </div>
+            <div class="text-3xl font-bold text-gray-800">{{ card.value }}</div>
+          </div>
+        }
+      </div>
+
+      <!-- Latest Surveys Section -->
+      <div class="flex flex-col gap-4">
+        <h2 class="text-xl font-bold text-[#202224]">Lastest Surveys</h2>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-50 overflow-hidden">
+          <app-b-data-table
+            [columns]="tableColumns"
+            [data]="recentSubmissions() || []"
+            [loading]="isLoading()"
+            [showPagination]="false"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-6">
+      <app-reports-filters />
+    </div>
+  </div>
+</div>

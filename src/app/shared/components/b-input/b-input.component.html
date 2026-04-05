@@ -1,0 +1,33 @@
+<div class="form-group">
+  <app-b-lable [id]="id() + '_input'" [label]="label()" [subLable]="subLable()"></app-b-lable>
+  <div class="input-container">
+    <input
+      [id]="id() + '_input'"
+      [type]="inputType()"
+      [placeholder]="placeholder()"
+      [class]="'form-control ' + (hasError() ? 'border-red-500' : '') + ' ' + class()"
+      [value]="value()"
+      (input)="onInput($event)"
+      (blur)="onBlur()"
+      [disabled]="disabled()"
+    />
+
+    @if (icon()) {
+      <lucide-angular [img]="icon()" size="20" class="my-icon stroke-gray-704" />
+    }
+
+    @if (type() === 'password') {
+      <button type="button" class="cursor-pointer" (click)="togglePassword()">
+        <lucide-angular
+          [img]="showPassword() ? eyeIcon() : eyeOffIcon()"
+          size="20"
+          class="my-icon stroke-gray-704"
+        />
+      </button>
+    }
+  </div>
+
+  @if (hasError() && errorMessage()) {
+    <span class="text-red-500 text-xs mt-1 block">{{ errorMessage() }}</span>
+  }
+</div>

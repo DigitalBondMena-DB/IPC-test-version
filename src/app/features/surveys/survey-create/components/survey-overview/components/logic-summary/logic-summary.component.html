@@ -1,0 +1,21 @@
+<div class="bg-white rounded-lg p-6 border border-gray-100 shadow-sm h-full flex flex-col">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-slate-800">Conditional Logic Summary</h3>
+        <span class="text-xs text-slate-500">Total: {{ logic().total_rules }} rules</span>
+    </div>
+
+    <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar flex flex-col gap-3">
+        @if (logic().rules?.length) {
+        @for (rule of logic().rules; track $index) {
+        <div class="p-3 rounded-lg border border-blue-100 bg-slate-50 text-sm text-slate-700">
+            {{ rule.summary }}
+        </div>
+        }
+        } @else {
+        <div
+            class="flex flex-col items-center justify-center p-6 text-center h-full bg-slate-50 rounded-lg border border-dashed border-slate-200">
+            <p class="text-slate-500 text-sm">No conditional logic rules defined.</p>
+        </div>
+        }
+    </div>
+</div>

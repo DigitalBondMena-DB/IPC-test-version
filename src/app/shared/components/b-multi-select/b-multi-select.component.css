@@ -1,0 +1,16 @@
+@reference "tailwindcss";
+
+.custom-multiselect {
+  width: 100%;
+}
+
+.p-multiselect {
+  @apply w-full !bg-white !border !border-[#e5e7eb] rounded-lg transition-all duration-200;
+}
+.p-multiselect-header .p-checkbox {
+  display: none !important;
+}
+.p-multiselect-label {
+  color: red !important;
+  --p-multiselect-color: theme(--color-black);
+}

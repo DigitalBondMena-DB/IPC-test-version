@@ -1,0 +1,226 @@
+<div class="mt-6 space-y-8 pb-20 pt-6 px-4 rounded-xl bg-white">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="p-2 bg-blue-50 rounded-lg text-blue-500">
+        <lucide-angular [img]="trashIcon" [size]="20" class="opacity-0" />
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-black-400">Graded Questions</h2>
+        <p class="text-sm text-gray-500">Set up dynamic survey behavior based on user responses</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 space-y-8">
+    <div class="rounded-xl border bg-[#F9FAFB] border-[#E5E7EB] p-6 custom-shadow">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="col-span-1 md:col-span-2">
+          <label for="graded_domain_tree" class="block font-semibold text-black-400 mb-1.5">
+            Domain & Subdomain <span class="text-red-500">*</span>
+          </label>
+          <p-treeSelect
+            [(ngModel)]="selectedGradedTreeNode"
+            id="graded_domain_tree"
+            [options]="domainTreeNodes()"
+            class="w-full"
+            appendTo="body"
+            [disabled]="isEditMode()"
+            placeholder="Select Domain / Subdomain"
+            [filter]="true"
+            filterBy="label,searchTitle"
+            filterPlaceholder="Search domain or subdomain..."
+            filterMode="lenient"
+            (onNodeSelect)="onGradedTreeNodeSelect($event)"
+          ></p-treeSelect>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div>
+        <label class="block text-sm font-medium text-black-400 mb-1">Survey Name</label>
+        <input
+          type="text"
+          [value]="surveyName()"
+          readonly
+          class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-black-400 mb-1">Domain</label>
+        <input
+          type="text"
+          [value]="activeNodeContext()?.breadcrumbs?.[0] || ''"
+          readonly
+          class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-black-400 mb-1">Subdomain</label>
+        <input
+          type="text"
+          [value]="activeNodeContext()?.breadcrumbs?.slice(1)?.join(' > ') || ''"
+          readonly
+          class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+        />
+      </div>
+    </div>
+
+    <form [formGroup]="questionForm" class="space-y-6">
+      <div>
+        <app-b-input
+          id="graded_q_name"
+          label="Question Name"
+          placeholder="Enter question name..."
+          formControlName="text"
+          class="text-black-400"
+        />
+        @if (questionForm.get('text')?.invalid && questionForm.get('text')?.touched) {
+          <small class="text-red-500 text-xs mt-1 block px-1">Question name is required</small>
+        }
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-black-400 mb-1">Question Description</label>
+        <textarea
+          formControlName="description"
+          placeholder="Enter question description..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] text-black-400"
+        ></textarea>
+        @if (questionForm.get('description')?.invalid && questionForm.get('description')?.touched) {
+          <small class="text-red-500 text-xs mt-1 block px-1"
+            >Question description is required</small
+          >
+        }
+      </div>
+
+      <div class="bg-[#F8FAFC] border border-gray-100 rounded-xl p-6 space-y-6">
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-bold text-black-400">Answer Choices</label>
+          <div class="flex gap-4">
+            <button
+              type="button"
+              [disabled]="hasNaOption"
+              (click)="addNaOption()"
+              class="text-blue-500 text-sm font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              + Add N/A
+            </button>
+            <button
+              type="button"
+              (click)="addOption()"
+              class="text-blue-500 text-sm font-medium hover:underline"
+            >
+              + Add Choice
+            </button>
+          </div>
+        </div>
+
+        <div formArrayName="options" class="space-y-4">
+          @for (opt of optionsArray.controls; track opt; let i = $index) {
+            <div
+              [formGroupName]="i"
+              class="flex items-center gap-4 bg-white p-3 rounded-xl border shadow-sm transition-colors"
+              [class.border-gray-100]="opt.valid || !opt.touched"
+              [class.border-red-300]="opt.invalid && opt.touched"
+            >
+              <div class="w-6 h-6 border-2 border-gray-300 rounded-full"></div>
+              <div class="flex-1 flex flex-col pt-1 w-full">
+                @if (opt.get('isNa')?.value) {
+                  <input
+                    formControlName="text"
+                    readonly
+                    class="text-sm border-none focus:ring-0 focus:outline-0 text-black-400 font-medium bg-transparent cursor-not-allowed w-full"
+                  />
+                } @else {
+                  <input
+                    formControlName="text"
+                    placeholder="Enter option here..."
+                    class="text-sm border-none focus:ring-0 focus:outline-0 text-black-400 font-medium w-full"
+                  />
+                  @if (opt.get('text')?.invalid && opt.get('text')?.touched) {
+                    <small class="text-red-500 text-xs mt-1 font-medium"
+                      >Answer choice is required</small
+                    >
+                  }
+                }
+              </div>
+
+              @if (!opt.get('isNa')?.value) {
+                <div class="flex flex-col items-end gap-1">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-500">Score:</span>
+                    <input
+                      type="number"
+                      formControlName="weight"
+                      class="w-16 px-2 py-1 border border-gray-200 rounded text-center text-sm font-bold bg-gray-50 focus:outline-0 text-black-400"
+                      [class.border-red-500]="
+                        opt.get('weight')?.invalid && opt.get('weight')?.touched
+                      "
+                    />
+                  </div>
+                  @if (opt.get('weight')?.hasError('min') && opt.get('weight')?.touched) {
+                    <small class="text-red-500 text-[10px] font-medium">Min score is 0</small>
+                  }
+                  @if (opt.get('weight')?.hasError('required') && opt.get('weight')?.touched) {
+                    <small class="text-red-500 text-[10px] font-medium">Score required</small>
+                  }
+                </div>
+              }
+
+              @if (optionsArray.length > 1) {
+                <button
+                  (click)="removeOption(i)"
+                  class="p-1.5 text-red-400 hover:text-red-500 transition-colors"
+                >
+                  <lucide-angular [img]="trashIcon" [size]="16" />
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </form>
+
+    <div class="flex items-center justify-between pt-8 border-t border-gray-100 mt-8">
+      <button
+        (click)="cancelFromGradedForm()"
+        class="flex items-center gap-2 px-14 py-3 text-sm rounded-lg bg-[#F9F9F9] text-gray-703 hover:bg-gray-100 transition-colors font-medium"
+      >
+        Cancel
+      </button>
+
+      <div class="flex items-center gap-4">
+        @if (!isEditMode()) {
+          <button
+            type="button"
+            (click)="backFromGradedForm()"
+            class="flex items-center gap-2 px-14 py-3 text-sm rounded-lg bg-[#F9F9F9] text-gray-703 hover:bg-gray-100 transition-colors font-medium"
+          >
+            Skip
+          </button>
+        }
+        <button
+          type="button"
+          (click)="onAddGradedQuestion()"
+          [class.bg-[#16A34A]]="!isEditMode()"
+          [class.hover:bg-green-700]="!isEditMode()"
+          [class.bg-blue-500]="isEditMode()"
+          [class.hover:bg-blue-600]="isEditMode()"
+          class="flex items-center gap-2 px-14 py-3 rounded-lg text-white text-sm transition-colors font-medium"
+        >
+          {{ isEditMode() ? 'Update Question' : 'Add New Question' }}
+        </button>
+        @if (!isEditMode()) {
+          <button
+            type="button"
+            (click)="goToGradedReview()"
+            class="flex items-center gap-2 px-14 py-3 rounded-lg bg-primary-500 text-white hover:bg-blue-600 text-sm transition-colors font-medium"
+          >
+            Save
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</div>

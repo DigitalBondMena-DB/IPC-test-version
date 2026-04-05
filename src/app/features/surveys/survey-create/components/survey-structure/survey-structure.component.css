@@ -1,0 +1,38 @@
+:host ::ng-deep .p-editor-container .p-editor-content .ql-editor {
+  min-height: 150px;
+  font-family: 'Inter', sans-serif;
+  color: #0e0e0e;
+}
+.custom-shadow {
+  box-shadow: 0px 4px 20px 0px rgba(0, 0, 0, 0.05);
+}
+.leaf-node {
+  border-left: 2px solid #16a34a;
+  background-color: #f0fdf4;
+}
+.question-icon {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -8px;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 16px;
+    background-color: var(--color-gray-700);
+  }
+}
+.subdomain-card {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -3px;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 16px;
+    background-color: var(--color-gray-704);
+  }
+}

@@ -1,0 +1,38 @@
+<header class="flex items-center justify-between">
+  <div class="flex items-center">
+    @if (activeBreadcrumb(); as breadcrumb) {
+      <div class="flex items-center gap-2">
+        <span
+          class="text-gray-300 font-medium text-lg truncate 2xl:max-w-[50px] inline-block"
+          [class]="{
+            'max-w-[150px]': breadcrumb.item !== 'Surveys' && !breadcrumb.parent,
+            'max-w-[50px]': breadcrumb.item === 'Surveys' || breadcrumb.parent,
+          }"
+          [pTooltip]="breadcrumb.section"
+          tooltipPosition="bottom"
+          >{{ breadcrumb.section }}</span
+        >
+        @if (breadcrumb.parent) {
+          <lucide-angular [img]="ChevronsRight" [size]="24" class="text-gray-300 flex-shrink-0" />
+          <span
+            class="text-gray-300 font-medium text-lg truncate max-w-[100px] 2xl:max-w-[160px] inline-block"
+            [pTooltip]="breadcrumb.parent"
+            tooltipPosition="bottom"
+            >{{ breadcrumb.parent }}</span
+          >
+        }
+        <lucide-angular [img]="ChevronsRight" [size]="24" class="text-gray-300 flex-shrink-0" />
+        <span
+          class="text-[#1C398F] font-semibold text-[28px] truncate 2xl:max-w-[180px] inline-block"
+          [class]="{
+            'max-w-[180px]': breadcrumb.item !== 'Surveys' && !breadcrumb.parent,
+            'max-w-[50px]': breadcrumb.item === 'Surveys' || breadcrumb.parent,
+          }"
+          [pTooltip]="breadcrumb.item"
+          tooltipPosition="bottom"
+          >{{ breadcrumb.item }}</span
+        >
+      </div>
+    }
+  </div>
+</header>

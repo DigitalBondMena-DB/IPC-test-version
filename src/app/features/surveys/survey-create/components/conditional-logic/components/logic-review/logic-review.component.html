@@ -1,0 +1,313 @@
+<div class="space-y-6">
+  <!-- Survey & Domain Selection / Filtering -->
+  <div class="flex flex-col md:flex-row gap-6 mb-8">
+    <!-- Survey Selection (Standalone only) -->
+    @if (standaloneMode()) {
+      <div class="flex-1 rounded-xl border bg-[#F9FAFB] border-[#E5E7EB] p-6 custom-shadow">
+        <label class="block font-semibold text-black-400 mb-1.5 text-sm uppercase tracking-wider">
+          Survey Name <span class="text-red-500">*</span>
+        </label>
+        <app-b-select
+          [options]="surveyOptions()"
+          [ngModel]="selectedSurveyId()"
+          (ngModelChange)="onSurveyChange($event)"
+          [filter]="true"
+          [virtualScroll]="true"
+          [loading]="surveysResource.isLoading()"
+          (onSearch)="onSurveySearch($event)"
+          (onScrollPagination)="onSurveyScroll($event)"
+          placeholder="Select survey name.."
+        ></app-b-select>
+      </div>
+    }
+
+    <!-- Domain Filter (Shown if survey is selected or in wizard mode) -->
+    @if (selectedSurveyId() || !standaloneMode()) {
+      <div
+        class="flex-1 rounded-xl border bg-[#F9FAFB] border-[#E5E7EB] p-6 custom-shadow relative"
+      >
+        <label class="block font-semibold text-black-400 mb-1.5 text-sm uppercase tracking-wider">
+          Filter by Domain & Subdomain
+        </label>
+        <div class="flex items-center gap-2">
+          <p-treeSelect
+            [(ngModel)]="selectedFilterNode"
+            [options]="domainTreeNodes()"
+            class="w-full flex-1"
+            appendTo="body"
+            placeholder="All Domains"
+            [filter]="true"
+            filterBy="label,searchTitle"
+            filterPlaceholder="Search domain or subdomain..."
+            filterMode="lenient"
+            (onNodeSelect)="onDomainFilterSelect($event)"
+            (onNodeUnselect)="onClearDomainFilter()"
+          ></p-treeSelect>
+          @if (reviewDomainFilterId()) {
+            <button
+              type="button"
+              (click)="onClearDomainFilter()"
+              class="text-xs text-red-500 hover:text-red-700 font-medium whitespace-nowrap"
+            >
+              Clear
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h3 class="text-xl font-bold text-black-400">Added Conditions</h3>
+      <p class="text-sm text-gray-500 italic">Review your conditions before confirming.</p>
+    </div>
+  </div>
+
+  @if (allLogicRules().length > 0) {
+    <div class="grid gap-6">
+      @for (ruleEntry of allLogicRules(); track ruleEntry.rule.id; let i = $index) {
+        <div class="bg-white rounded-xl border border-blue-200 p-6 custom-shadow relative">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-blue-500">Conditional Logic</h3>
+            <div class="flex items-center gap-2">
+              @if (reviewEditIndex() !== i) {
+                <button
+                  type="button"
+                  class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
+                  (click)="onEditRule(i)"
+                >
+                  <lucide-angular [img]="EditIcon" class="w-5 h-5"></lucide-angular>
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="flex items-center gap-2 text-white bg-primary-500 hover:bg-primary-600 px-4 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all transform active:scale-95"
+                  (click)="saveReviewRule(i)"
+                >
+                  <lucide-angular [img]="CheckIcon" class="w-4 h-4"></lucide-angular>
+                  Save Rule
+                </button>
+                <button
+                  type="button"
+                  class="text-gray-500 hover:bg-gray-50 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                  (click)="cancelReviewEdit()"
+                >
+                  Cancel
+                </button>
+              }
+              <button
+                type="button"
+                class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                (click)="onDeleteRule(i)"
+              >
+                <lucide-angular [img]="TrashIcon" class="w-5 h-5"></lucide-angular>
+              </button>
+            </div>
+          </div>
+
+          @if (reviewEditIndex() === i && reviewEditForm(); as form) {
+            <form [formGroup]="form" class="space-y-6 text-black-400 mt-4">
+              <!-- If This Question -->
+              <div class="flex items-start gap-4">
+                <div
+                  class="text-xs font-semibold w-12 h-8 flex items-center justify-center bg-gray-706 text-blue-500 rounded-lg"
+                >
+                  If
+                </div>
+                <div class="flex-1">
+                  <app-b-select
+                    id="review_trigger_question_{{ i }}"
+                    label="This Question"
+                    [options]="getReviewTriggerOptions(form.get('trigger_question_id')?.value)"
+                    formControlName="trigger_question_id"
+                    placeholder="Select a question..."
+                  ></app-b-select>
+                </div>
+              </div>
+
+              <!-- Has The answer -->
+              <div class="flex items-start gap-4">
+                <div
+                  class="text-xs font-semibold w-12 h-8 flex items-center justify-center bg-gray-702 text-[#F4C430] rounded-lg"
+                >
+                  Has
+                </div>
+                <div class="flex-1">
+                  <app-b-select
+                    [id]="'review_trigger_answer_' + i"
+                    label="The answer"
+                    [options]="getQuestionOptions(form.get('trigger_question_id')?.value)"
+                    formControlName="trigger_answer"
+                    placeholder="Select an answer option..."
+                  ></app-b-select>
+                </div>
+              </div>
+
+              <!-- Then Action -->
+              <div class="flex items-start gap-4">
+                <div
+                  class="text-xs font-semibold w-12 h-8 flex items-center justify-center bg-[#EDFCF2] text-[#16A34A] rounded-lg"
+                >
+                  Then
+                </div>
+                <div class="flex-1">
+                  <label class="block text-sm font-medium text-gray-703 mb-3">Action</label>
+                  <div class="flex flex-wrap items-center gap-6">
+                    @for (opt of actionOptions; track opt.value) {
+                      <div class="flex items-center gap-2">
+                        <p-radioButton
+                          [inputId]="'review_action_' + i + '_' + opt.value"
+                          [value]="opt.value"
+                          formControlName="ui_action_type"
+                          class="radio-btn"
+                        ></p-radioButton>
+                        <label
+                          [for]="'review_action_' + i + '_' + opt.value"
+                          class="text-sm text-[#6F6F6F]"
+                          >{{ opt.label }}</label
+                        >
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Dynamic Fields based on Action -->
+                  @if (
+                    form.get('ui_action_type')?.value &&
+                    !['mandatory_comment', 'mandatory_action_plan'].includes(
+                      form.get('ui_action_type')?.value
+                    )
+                  ) {
+                    <div class="mt-6 space-y-4">
+                      @if (form.get('ui_action_type')?.value === 'alert') {
+                        <app-b-select
+                          id="review_alert_type_{{ i }}"
+                          label="Alert Type"
+                          [options]="alertTypeOptions"
+                          formControlName="alert_type"
+                          placeholder="Select alert type..."
+                        ></app-b-select>
+                      }
+
+                      @if (
+                        ['show', 'hide', 'na', 'limited_answer'].includes(
+                          form.get('ui_action_type')?.value
+                        )
+                      ) {
+                        <app-b-select
+                          [id]="'review_target_question_id_' + i"
+                          label="Apply Action to Question"
+                          [options]="getReviewTargetOptions(form.get('trigger_question_id')?.value)"
+                          [ngModel]="getTargetId(form)"
+                          (ngModelChange)="setTargetId(form, $event)"
+                          [ngModelOptions]="{ standalone: true }"
+                          placeholder="Select a question..."
+                        ></app-b-select>
+                      }
+
+                      @if (
+                        form.get('ui_action_type')?.value === 'limited_answer' && getTargetId(form)
+                      ) {
+                        <div class="mt-4">
+                          <label class="block text-sm font-medium text-gray-703 mb-2"
+                            >Question's Answers</label
+                          >
+                          <div class="grid grid-cols-1 gap-2">
+                            @for (ans of getQuestionOptions(getTargetId(form)); track ans.value) {
+                              <app-b-checkbox
+                                class="rounded-md! border-gray-300! checked:border-primary-500!"
+                                [id]="'review_ans_' + i + '_' + ans.value"
+                                [label]="ans.label"
+                                [ngModel]="isAnswerSelected(form, ans.value)"
+                                (ngModelChange)="toggleAnswer(form, ans.value)"
+                                [ngModelOptions]="{ standalone: true }"
+                              ></app-b-checkbox>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            </form>
+          } @else {
+            <div class="space-y-4 text-sm text-black-400">
+              <div class="flex items-center gap-4">
+                <div
+                  class="text-xs font-semibold w-12 h-8 flex items-center justify-center bg-gray-706 text-blue-500 rounded-lg"
+                >
+                  If
+                </div>
+                <div class="font-semibold text-[#111827]">
+                  {{ ruleEntry.triggerQuestion.text }}
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div
+                  class="text-xs font-semibold w-12 h-8 flex items-center justify-center bg-gray-702 text-[#F4C430] rounded-lg"
+                >
+                  Has
+                </div>
+                <div class="font-semibold text-[#111827]">
+                  {{ ruleEntry.rule.trigger_answer }}
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div
+                  class="text-xs font-semibold w-12 h-8 flex items-center justify-center bg-[#EDFCF2] text-[#16A34A] rounded-lg"
+                >
+                  Then
+                </div>
+                <div class="flex-1">
+                  <span class="font-semibold text-[#111827]">{{
+                    ruleEntry.rule.action_type | uppercase
+                  }}</span>
+                  @if (ruleEntry.rule.target_question_id) {
+                    on question:
+                    <span class="text-blue-600 italic"
+                      >"{{ getQuestionTextById(ruleEntry.rule.target_question_id) }}"</span
+                    >
+                  }
+                  @if (ruleEntry.rule.target_answer_options?.length) {
+                    • Options:
+                    <span class="font-medium">{{
+                      ruleEntry.rule.target_answer_options.join(', ')
+                    }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  } @else {
+    <div
+      class="text-center py-12 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200"
+    >
+      No active conditions added.
+    </div>
+  }
+
+  <div class="flex items-center justify-between pt-8 border-t border-gray-100 mt-8">
+    @if (!standaloneMode()) {
+      <button
+        type="button"
+        class="flex items-center gap-2 px-14 py-3 text-sm rounded-lg bg-[#F9F9F9] text-gray-703 hover:bg-gray-100 transition-colors font-medium"
+        (click)="onSkip()"
+      >
+        Skip
+      </button>
+    }
+    @if (!standaloneMode()) {
+      <button
+        type="button"
+        class="flex items-center gap-2 px-14 py-3 rounded-lg bg-primary-500 text-white hover:bg-blue-600 text-sm transition-colors font-medium"
+        (click)="onNext()"
+      >
+        Next Step
+      </button>
+    }
+  </div>
+</div>

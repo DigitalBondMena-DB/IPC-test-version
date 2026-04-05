@@ -1,0 +1,202 @@
+@if (loading()) {
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          @for (col of columns(); track col.field) {
+            <th>{{ col.header }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (_ of skeletonRows; track $index) {
+          <tr class="skeleton-row">
+            @for (col of columns(); track col.field) {
+              <td>
+                <div class="skeleton-cell">
+                  <div class="skeleton-bar"></div>
+                </div>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else if (hasError()) {
+  <div class="error-container">
+    <lucide-angular [img]="retryIcon" [size]="48" class="error-icon" />
+    <p class="error-title">Failed to load data</p>
+    <p class="error-subtitle">Something went wrong. Please try again.</p>
+    <button class="retry-btn" (click)="retryLoad.emit()">
+      <lucide-angular [img]="retryIcon" [size]="16" />
+      Retry
+    </button>
+  </div>
+} @else {
+  <div class="table-container custom-scrollbar mt-10">
+    <table class="data-table">
+      <thead>
+        <tr>
+          @for (col of columns(); track col.field) {
+            <th [class.sortable]="col.sortable" (click)="onSort(col)">
+              <div class="th-content capitalize" [class]="col?.customClass">
+                {{ col.header }}
+                @if (getSortIcon(col); as icon) {
+                  <lucide-angular [img]="icon" [size]="16" class="sort-icon" />
+                }
+              </div>
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of data(); track $index) {
+          <tr>
+            @for (col of columns(); track col.field) {
+              <td>
+                @switch (col.type) {
+                  @case ('date') {
+                    <span [pTooltip]="row[col.field] ?? 'N/A'" tooltipPosition="top">
+                      {{ row[col.field] | date: 'MMM dd, yyyy' }}
+                    </span>
+                  }
+                  @case ('toggle') {
+                    <div class="actions-cell">
+                      <div
+                        [pTooltip]="
+                          isCanBeEdited(row)
+                            ? 'Now you can not toggle this record'
+                            : 'Click to toggle this record'
+                        "
+                        tooltipPosition="top"
+                      >
+                        <label class="toggle-switch" [class.disabled]="isCanBeEdited(row)">
+                          <input
+                            type="checkbox"
+                            [checked]="row[col.field]"
+                            [disabled]="isCanBeEdited(row)"
+                            (change)="onToggle(row, col.field)"
+                          />
+                          <span class="toggle-slider"></span>
+                        </label>
+                      </div>
+                      @if (col.duplicate) {
+                        <button
+                          class="edit-btn text-[#16A34A]! bg-[#EDFCF2]!"
+                          (click)="onDuplicate(row)"
+                          pTooltip="Click to duplicate this record"
+                          tooltipPosition="top"
+                        >
+                          <lucide-angular [img]="copyIcon" [size]="16" />
+                        </button>
+                      }
+                      <button
+                        class="edit-btn"
+                        [disabled]="isCanBeEdited(row)"
+                        [pTooltip]="
+                          isCanBeEdited(row)
+                            ? 'Now you can not edit this record'
+                            : 'Click to edit this record'
+                        "
+                        tooltipPosition="left"
+                        (click)="onEdit(row)"
+                      >
+                        <lucide-angular [img]="pencilIcon" [size]="16" />
+                      </button>
+                    </div>
+                  }
+                  @case ('actions') {
+                    <div class="actions-cell">
+                      @if (col.viewOnly) {
+                        <button
+                          class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                          (click)="onView(row)"
+                          pTooltip="View details"
+                          tooltipPosition="top"
+                        >
+                          <lucide-angular [img]="eyeIcon" [size]="18" />
+                        </button>
+                      }
+                      @if (col.duplicate) {
+                        <button
+                          class="edit-btn text-[#16A34A]! bg-[#EDFCF2]!"
+                          (click)="onDuplicate(row)"
+                          pTooltip="Click to duplicate this record"
+                          tooltipPosition="top"
+                        >
+                          <lucide-angular [img]="copyIcon" [size]="16" />
+                        </button>
+                      }
+                      @if (!col.viewOnly) {
+                        <button
+                          class="edit-btn"
+                          [disabled]="isCanBeEdited(row)"
+                          [pTooltip]="
+                            isCanBeEdited(row)
+                              ? 'Click to edit this record'
+                              : 'Now you can not edit this record'
+                          "
+                          tooltipPosition="left"
+                          (click)="onEdit(row)"
+                        >
+                          <lucide-angular [img]="pencilIcon" [size]="16" />
+                        </button>
+                      }
+                    </div>
+                  }
+                  @default {
+                    <p class="line-clamp-1">
+                      <span [pTooltip]="row[col.field] ?? 'N/A'" tooltipPosition="top">
+                        {{ row[col.field] ?? 'N/A' }}
+                      </span>
+                    </p>
+                  }
+                }
+              </td>
+            }
+          </tr>
+        } @empty {
+          <tr>
+            <td [attr.colspan]="columns().length" class="empty-cell">No data found</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (showPagination()) {
+      <div class="pagination-bar">
+        <div class="pagination-left">
+          <span class="show-label">Show</span>
+          <select class="rows-select" (change)="onRowsChange($event)">
+            @for (opt of dynamicRowOptions(); track opt.value) {
+              <option [value]="opt.value" [selected]="opt.value === rows()">{{ opt.label }}</option>
+            }
+          </select>
+          <span class="records-info">
+            Showing data {{ startRecord() }} to {{ endRecord() }} of {{ totalRecords() }} entries
+          </span>
+        </div>
+
+        <div class="pagination-right">
+          <button class="page-btn nav-btn" [disabled]="page() === 1" (click)="onPrev()">
+            <lucide-angular [img]="chevronLeftIcon" [size]="16" />
+          </button>
+
+          @for (p of visiblePages(); track $index) {
+            @if (p === '...') {
+              <span class="page-dots">...</span>
+            } @else {
+              <button class="page-btn" [class.active]="p === page()" (click)="onPageChange(p)">
+                {{ p }}
+              </button>
+            }
+          }
+
+          <button class="page-btn nav-btn" [disabled]="page() === lastPage()" (click)="onNext()">
+            <lucide-angular [img]="chevronRightIcon" [size]="16" />
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+}

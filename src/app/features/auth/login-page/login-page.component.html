@@ -1,0 +1,96 @@
+<div class="grid grid-cols-1 lg:grid-cols-2">
+  <div
+    class="text-black-400 h-screen pt-6 flex items-center justify-center flex-col lg:rounded-e-2xl z-20 bg-white px-22 pb-4"
+  >
+    <div class="flex items-center justify-center max-w-[544px] w-full">
+      <div class="login-form w-full">
+        <div class="login-title">
+          <h1 class="font-bold text-[28px] leading-[33px]">
+            <div>
+              Welcome to
+              <img
+                src="/assets/images/shared/ipc-logo.webp"
+                class="inline-block"
+                width="48"
+                height="48"
+                alt="M&E IPC Logo"
+              />
+              <span class="text-primary-500 font-bold text-sm">HealthTrack M&E</span>
+            </div>
+
+            Log In to see latest updates.
+          </h1>
+          <p class="text-gray-600 mt-3">Enter your details to proceed further</p>
+        </div>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="mt-10">
+          <app-b-input
+            id="identity"
+            label="Email/Phone Number"
+            placeholder="Enter your email or phone number"
+            type="text"
+            [icon]="MailIcon"
+            formControlName="identity"
+            [hasError]="isInvalid('identity')"
+            [errorMessage]="getErrorMessage('identity')"
+          />
+
+          <app-b-input
+            id="password"
+            label="Password"
+            placeholder="Enter your password"
+            type="password"
+            [eyeIcon]="EyeIcon"
+            [eyeOffIcon]="EyeOffIcon"
+            formControlName="password"
+            [hasError]="isInvalid('password')"
+            [errorMessage]="getErrorMessage('password')"
+          />
+
+          <app-b-checkbox
+            id="remember_me"
+            label="Remember me"
+            shape="circle"
+            formControlName="remember_me"
+          />
+          @if (error()) {
+            <p class="text-red-500 text-sm text-center mt-2">{{ error() }}</p>
+          }
+          <button
+            type="submit"
+            class="w-full py-3 px-4 rounded-2xl bg-primary-500 hover:bg-primary-500/90 transition-colors duration-300 text-white mt-10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            [disabled]="isLoading() || (loginForm.invalid && loginForm.touched)"
+          >
+            @if (isLoading()) {
+              <lucide-angular [img]="LoaderIcon" size="18" class="animate-spin" />
+              loading...
+            } @else {
+              Log In
+            }
+          </button>
+        </form>
+      </div>
+    </div>
+    <p class="font-bold text-xs text-gray-704 mt-6">
+      Powered by
+      <a href="https://www.digitalbondmena.com/" target="_blank" rel="noopener noreferrer">
+        <img
+          src="/assets/images/shared/digital-bond-logo.webp"
+          class="inline-block"
+          width="22"
+          height="18"
+          alt="digital bond logo"
+        />
+      </a>
+      Digital Bond
+    </p>
+  </div>
+  <div class="right-style hidden lg:block relative h-screen -ms-4">
+    <img
+      src="/assets/images/login/login-bg.webp"
+      class="w-full h-full object-cover"
+      alt=""
+      role="presentation"
+    />
+  </div>
+</div>

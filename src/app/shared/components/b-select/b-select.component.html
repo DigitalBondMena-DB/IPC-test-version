@@ -1,0 +1,42 @@
+<div class="form-group">
+  <app-b-lable [id]="id()" [label]="label()" [subLable]="subLable()"></app-b-lable>
+  <div
+    class="input-container"
+    [pTooltip]="disabled() ? disabledTooltip() : ''"
+    tooltipPosition="top"
+  >
+    <p-select
+      [id]="id()"
+      [options]="options()"
+      [placeholder]="placeholder()"
+      [disabled]="disabled()"
+      [filter]="filter()"
+      [loading]="loading()"
+      (onChange)="onSelectChange($event)"
+      (onFilter)="onFilterChange($event)"
+      (onLazyLoad)="onScrollPagination.emit($event)"
+      [showClear]="true"
+      [class]="'w-full custom-select ' + (hasError() ? '!border-red-500' : '')"
+      panelStyleClass="custom-select-panel"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="value()"
+      (ngModelChange)="onModelChange($event)"
+      appendTo="body"
+    >
+      <ng-template #item let-item>
+        @if (item && item.label) {
+          {{ item.label }}
+        } @else {
+          <div class="flex items-center gap-2 py-1">
+            <div class="animate-pulse bg-gray-100 h-4 w-24 rounded"></div>
+            <span class="text-xs text-gray-400">Loading...</span>
+          </div>
+        }
+      </ng-template>
+    </p-select>
+    @if (hasError()) {
+      <p class="text-red-500 text-xs mt-1">{{ errorMessage() }}</p>
+    }
+  </div>
+</div>

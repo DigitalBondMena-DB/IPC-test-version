@@ -1,0 +1,16 @@
+@reference "tailwindcss";
+
+.custom-select {
+    width: 100%;
+}
+
+.p-select {
+    @apply w-full !bg-white !border !border-[#e5e7eb] rounded-lg transition-all duration-200;
+}
+
+:host ::ng-deep .custom-select-panel {
+    .p-select-list-container {
+        max-height: 200px !important;
+        height: auto !important;
+    }
+}

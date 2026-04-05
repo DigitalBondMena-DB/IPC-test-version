@@ -1,0 +1,167 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-primary-500: #197bfd;
+  --color-black-400: #0e0e0e;
+  --color-gray-200: #f9f9f9;
+  --color-gray-300: #929292;
+  --color-gray-600: #6f6f6f;
+  --color-gray-700: #e5e7eb;
+  --color-gray-702: #fff9ed;
+  --color-gray-703: #4b5563;
+  --color-gray-704: #b0b0b0;
+  --color-gray-706: #eff6ff;
+  --color-red-100: #dc2626;
+  --color-red-200: #fffcfc;
+  --padding-layout-x: 1rem;
+
+  @keyframes slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  .p-accordioncontent-content {
+    border-bottom: none !important;
+    --p-accordion-panel-border-color: transparent !important;
+  }
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+
+  button {
+    @apply cursor-pointer;
+  }
+
+  .form-control {
+    @apply w-full px-3 py-2.5 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  }
+
+  /* Hide number input spinners */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  .form-group label {
+    @apply block font-semibold mb-1.5;
+  }
+
+  .form-group {
+    @apply mb-6;
+  }
+
+  .form-group .input-container {
+    @apply relative;
+  }
+
+  .form-group .my-icon {
+    @apply absolute inset-e-3 top-1/2 -translate-y-1/2;
+  }
+
+  .p-select-label {
+    --p-select-color: black;
+  }
+  .p-multiselect-label {
+    --p-chip-background: theme(--color-gray-706);
+    --p-chip-color: theme(--color-black-400);
+    --p-multiselect-color: theme(--color-black);
+  }
+  .custom-select-panel,
+  .custom-multiselect-panel {
+    @apply !bg-white !border !border-[#e5e7eb] rounded-lg transition-all duration-200;
+    --p-select-option-focus-background: theme(--color-gray-706);
+    --p-select-option-color: theme(--color-black-400);
+    --p-multiselect-option-color: theme(--color-black-400);
+    --p-multiselect-option-focus-background: theme(--color-gray-706);
+    --p-multiselect-option-focus-color: theme(--color-black-400);
+    --p-multiselect-option-focus-color-hover: theme(--color-black-400);
+    --p-multiselect-option-selected-color: theme(--color-black-400);
+    --p-multiselect-option-selected-focus-color: theme(--color-black-400);
+    --p-checkbox-background: theme(--color-gray-706);
+    --p-select-option-focus-color: theme(--color-black-400);
+    --p-inputtext-background: theme(--color-gray-706);
+    --p-inputtext-color: theme(--color-black-400);
+    --p-virtualscroller-loader-mask-background: theme(--color-gray-706);
+    --p-virtualscroller-loader-mask-color: theme(--color-black-400);
+    --p-select-option-selected-color: theme(--color-black-400);
+    .p-virtualscroller::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .p-virtualscroller::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+
+    .p-virtualscroller::-webkit-scrollbar-thumb {
+      background: var(--color-gray-703);
+      border-radius: 8px;
+    }
+
+    .p-virtualscroller::-webkit-scrollbar-thumb:hover {
+      background: var(--color-gray-706);
+    }
+  }
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: theme(--color-gray-706);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-[#343C6A] rounded-full hover:bg-gray-300 transition-colors;
+  }
+
+  .animate-slide-down {
+    animation: slide-down 0.2s ease-out forwards;
+  }
+
+  .toast-style .p-toast-message {
+    @apply !bg-white !rounded-2xl !border-0 !shadow-lg;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    min-width: 320px;
+    margin-bottom: 1rem;
+  }
+
+  .toast-style .p-toast-message-content {
+    @apply !flex !items-center !justify-start !gap-3 !p-3;
+  }
+
+  .toast-style .p-toast-message-icon {
+    @apply !m-0 !text-[#197bfd] !text-lg flex-shrink-0;
+  }
+
+  .toast-style .p-toast-message-text {
+    @apply !m-0 !flex !flex-col !justify-center !gap-0.5;
+  }
+
+  .toast-style .p-toast-summary {
+    @apply !hidden;
+  }
+
+  .toast-style .p-toast-detail {
+    @apply !text-[#333] !font-medium !text-sm !m-0 !leading-tight;
+  }
+
+  .toast-style .p-toast-message-close-button {
+    @apply !w-7 !h-7 !rounded-full !text-[#6f6f6f] hover:bg-gray-100 !transition-colors !m-0 !ms-auto;
+  }
+}

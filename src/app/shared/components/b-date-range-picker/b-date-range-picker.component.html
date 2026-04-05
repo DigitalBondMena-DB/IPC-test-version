@@ -1,0 +1,61 @@
+<div class="relative inline-block w-full">
+  <div (click)="toggleDateDropdown()" class="cursor-pointer relative w-full">
+    <input
+      readonly
+      [placeholder]="placeholder()"
+      class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-black-400"
+      [value]="
+        selectedRange()?.chosenLabel ||
+        (selectedRange()?.startDate
+          ? selectedRange()?.startDate?.format('MMM D, YYYY') +
+            ' - ' +
+            selectedRange()?.endDate?.format('MMM D, YYYY')
+          : '')
+      "
+      [disabled]="disabled"
+    />
+    <lucide-angular
+      [img]="calendarIcon"
+      [size]="18"
+      class="absolute end-3 top-1/2 -translate-y-1/2 text-gray-500"
+    />
+  </div>
+
+  @if (isDateDropdownOpen()) {
+    <div
+      class="absolute mt-2 p-4 flex flex-nowrap z-[100] bg-white rounded-xl shadow-lg border border-gray-100 min-w-max"
+      [ngClass]="{
+        'right-0': opens() === 'right',
+        'left-0': opens() === 'left',
+        'left-1/2 -translate-x-1/2': opens() === 'center',
+        'bottom-full mb-2': drops() === 'up',
+      }"
+    >
+      <div class="flex flex-col flex-1 pl-0 date-picker w-full">
+        <ngx-daterangepicker-material
+          [autoApply]="true"
+          [linkedCalendars]="true"
+          [alwaysShowCalendars]="true"
+          [ranges]="ranges"
+          (choosedDate)="onDatesUpdated($event)"
+        >
+        </ngx-daterangepicker-material>
+
+        <div class="flex gap-2 mt-3">
+          <button
+            (click)="clearFilter()"
+            class="flex-1 bg-gray-200 hover:bg-gray-700 text-gray-703 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+          >
+            Clear
+          </button>
+          <button
+            (click)="applyFilter()"
+            class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors"
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

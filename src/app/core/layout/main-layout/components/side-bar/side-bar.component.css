@@ -1,0 +1,25 @@
+.activeItem {
+  color: var(--color-primary-500);
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 100%;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    background-color: var(--color-primary-500);
+    transition: all 0.3s ease-in-out;
+  }
+}
+.custom-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  display: none;
+}

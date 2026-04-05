@@ -1,0 +1,75 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-builder">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6 items-center text-black-400">
+    @for (field of fields(); track field.key) {
+      <div [class]="field.colSpan || 'col-span-1'">
+        @switch (field.type) {
+          @case ('select') {
+            <app-b-select
+              [id]="field.key"
+              [label]="field.label"
+              [subLable]="field.subLable || ''"
+              [placeholder]="field.placeholder || ''"
+              [options]="field.options || []"
+              [filter]="field.filter || false"
+              [virtualScroll]="field.virtualScroll || false"
+              [loading]="field.loading || false"
+              [formControlName]="field.key"
+              (onSearch)="onSearch.emit({ key: field.key, text: $event })"
+              (onScrollPagination)="onScrollPagination.emit({ key: field.key, event: $event })"
+              [hasError]="!!getErrorMessage(field)"
+              [errorMessage]="getErrorMessage(field)"
+            />
+          }
+          @case ('multiselect') {
+            <app-b-multi-select
+              [id]="field.key"
+              [label]="field.label"
+              [subLable]="field.subLable || ''"
+              [placeholder]="field.placeholder || ''"
+              [options]="field.options || []"
+              [filter]="field.filter || false"
+              [virtualScroll]="field.virtualScroll || false"
+              [loading]="field.loading || false"
+              [formControlName]="field.key"
+              (onSearch)="onSearch.emit({ key: field.key, text: $event })"
+              (onScrollPagination)="onScrollPagination.emit({ key: field.key, event: $event })"
+              [hasError]="!!getErrorMessage(field)"
+              [errorMessage]="getErrorMessage(field)"
+            />
+          }
+          @case ('checkbox') {
+            <app-b-checkbox [id]="field.key" [label]="field.label" [formControlName]="field.key" />
+          }
+          @default {
+            <app-b-input
+              [id]="field.key"
+              [label]="field.label"
+              [type]="field.type"
+              class="placeholder:text-gray-704"
+              [placeholder]="field.placeholder || ''"
+              [formControlName]="field.key"
+              [hasError]="!!getErrorMessage(field)"
+              [errorMessage]="getErrorMessage(field)"
+            />
+          }
+        }
+      </div>
+    }
+    <div
+      class="form-actions"
+      [class]="
+        fields().length % 2 == 0 ? 'col-span-full justify-center mt-10' : 'col-span-1 justify-end'
+      "
+    >
+      <button type="button" class="btn-cancel" (click)="onCancel()" [disabled]="loading()">
+        {{ cancelLabel() }}
+      </button>
+      <button type="submit" class="btn-submit" [disabled]="loading() || form.invalid">
+        @if (loading()) {
+          <span class="loader mr-2"></span>
+        }
+        {{ submitLabel() }}
+      </button>
+    </div>
+  </div>
+</form>

@@ -1,0 +1,30 @@
+<div class="pt-2.5 px-layout-x">
+  <div
+    class="h-full flex flex-col pt-8 bg-white py-6 px-4 border border-[#E1E7EF] rounded-xl min-h-[70vh]"
+  >
+    <!-- Header -->
+    <div class="flex items-start justify-between mb-8">
+      <div class="flex items-start gap-4">
+        <div class="p-3 bg-blue-50 text-blue-500 rounded-lg">
+          <lucide-angular [img]="GitForkIcon" class="w-6 h-6"></lucide-angular>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900">Conditional Logic</h2>
+          <p class="text-gray-500 text-sm mt-1">Add preliminary and graded questions</p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="flex items-center gap-2 bg-primary-500 text-white px-6 py-2.5 rounded-xl hover:bg-primary-600 transition-all font-medium text-sm shadow-sm active:scale-95"
+        (click)="onAddLogic()"
+      >
+        <lucide-angular [img]="PlusIcon" class="w-4 h-4"></lucide-angular>
+        Add Conditional Logic
+      </button>
+    </div>
+
+    <!-- Sub-routes content (Review or Form) -->
+    <router-outlet></router-outlet>
+  </div>
+</div>

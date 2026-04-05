@@ -1,0 +1,61 @@
+<div class="notification-wrapper relative">
+  <!-- Bell Icon Button -->
+  <button
+    (click)="toggleDropdown()"
+    class="notification-btn flex items-center justify-center relative size-12 bg-gray-706 rounded-full transition-colors duration-200"
+    [class.active]="isDropdownOpen()"
+  >
+    <lucide-angular [img]="bellIcon" [size]="28" class="text-primary-500" />
+
+    @if (unreadCount() > 0) {
+      <span class="notification-badge absolute top-2 right-3 size-2 bg-red-500 rounded-full"></span>
+    }
+  </button>
+
+  <!-- Dropdown Menu -->
+  @if (isDropdownOpen()) {
+    <div class="notification-dropdown absolute right-0 top-full mt-2 w-156.75 bg-white rounded-lg shadow-2xl z-50 overflow-hidden border border-gray-200">
+      <div class="notification-list max-h-62.75 overflow-y-auto">
+        @if (notifications().length > 0) {
+          @for (notification of notifications(); track notification.id) {
+            <button
+              (click)="onNotificationClick(notification)"
+              (keydown.enter)="onNotificationClick(notification)"
+              class="notification-item w-full px-6 py-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors duration-150 text-left"
+              [class.unread]="!notification.is_read"
+            >
+              <!-- Unread Indicator -->
+              @if (!notification.is_read) {
+      <span class="notification-badge absolute top-4 right-3 size-2.5 bg-red-500 rounded-full"></span>
+              }
+
+              <div>               
+                <div class="grow min-w-0">
+                  <p class="font-medium text-lg text-black-400">{{ notification.title }}</p>
+                  <p class="text-sm text-gray-703 line-clamp-2 mt-2">{{ notification.body }}</p>
+                  <time class="text-xs text-gray-500 mt-2 block">
+                    {{ formatDate(notification.created_at) }}
+                  </time>
+                </div>
+              </div>
+            </button>
+          }
+        } @else {
+          <div class="px-6 py-12 text-center">
+            <p class="text-gray-500">No notifications</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Backdrop to close dropdown -->
+    <div
+      (click)="closeDropdown()"
+      (keydown.escape)="closeDropdown()"
+      class="fixed inset-0 z-40"
+      role="button"
+      tabindex="0"
+      aria-label="Close notification dropdown"
+    ></div>
+  }
+</div>

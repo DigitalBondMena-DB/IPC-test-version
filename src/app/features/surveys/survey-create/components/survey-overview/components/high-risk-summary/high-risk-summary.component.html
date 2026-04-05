@@ -1,0 +1,21 @@
+<div class="bg-white rounded-lg py-6 p-4 border border-[#E1E7EF] h-full flex flex-col">
+    <h3 class="text-lg font-bold text-black-400 mb-6">High-Risk & Notification Summary</h3>
+
+    <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar flex flex-col gap-3">
+        @if (summary().alarm_questions?.length) {
+        @for (alarm of summary().alarm_questions; track alarm) {
+        <div class="flex items-center justify-between p-3 rounded-lg border border-[#DC2626] bg-[#FFFCFC]">
+            <span class="font-medium text-[#7F1D1D]">{{ alarm }}</span>
+            <lucide-angular [img]="alertIcon" size="16" class="text-[#DC2626]"></lucide-angular>
+        </div>
+        }
+        } @else {
+        <!-- Empty state / Demo state -->
+        <div
+            class="flex flex-col items-center justify-center p-6 text-center h-full bg-slate-50 rounded-lg border border-dashed border-slate-200">
+            <lucide-angular [img]="alertIcon" size="24" class="text-slate-300 mb-2"></lucide-angular>
+            <p class="text-slate-500 text-sm">No high-risk alarms configured.</p>
+        </div>
+        }
+    </div>
+</div>

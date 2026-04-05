@@ -1,0 +1,58 @@
+<app-b-page-header [title]="''" [showCreateButton]="false" />
+@if (!isLoading()) {
+  <div class="grid grid-cols-1 gap-10 lg:grid-cols-6 px-layout-x pt-6">
+    @for (card of reportCards(); track $index) {
+      <div class="lg:col-span-2">
+        <div class="statisitcs-card h-full">
+          <div
+            class="bg-[#369FFF] min-h-[176px] z-10 relative shadow-[0px_11.34px_34.02px_0px_#369FFF66] flex justify-between rounded-[6px] ps-[28px] pe-3.5 pt-[26px] pb-3.5 overflow-hidden h-full"
+          >
+            <svg
+              width="194"
+              height="117"
+              viewBox="0 0 194 117"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              class="absolute inset-e-0 bottom-0 -z-10"
+            >
+              <path
+                opacity="0.2"
+                d="M193.956 88.2461C193.956 104.229 180.999 117.185 165.017 117.186H0C7.6967 95.2132 39.8471 51.2686 106.874 51.2686C173.901 51.2685 192.857 17.0895 193.956 0V88.2461Z"
+                fill="#006ED3"
+              />
+            </svg>
+            <svg
+              width="116"
+              class="absolute inset-s-0 top-0 -z-10"
+              height="59"
+              viewBox="0 0 116 59"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                opacity="0.2"
+                d="M29.1318 -1.66674C13.0428 -1.66672 4.68034e-05 11.376 -5.33539e-06 27.4651L-3.2171e-06 54.3655C8.8101 58.4409 32.502 62.7772 68.4658 50.1682C105.533 37.1722 114.532 8.52174 116 -1.66675L29.1318 -1.66674Z"
+                fill="#006ED3"
+              />
+            </svg>
+            <div>
+              <h3 class="font-semibold text-lg">{{ card.title }}</h3>
+              <p class="text-[32px] font-bold">{{ card.value }}</p>
+            </div>
+            <div class="flex items-end">
+              <img
+                [src]="card.image.src"
+                [width]="card.image.width"
+                [height]="card.image.height"
+                alt="total divisions"
+                class="mix-blend-luminosity"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+} @else {
+  <app-home-skeleton />
+}

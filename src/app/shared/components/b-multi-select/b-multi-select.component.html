@@ -1,0 +1,44 @@
+<div class="form-group">
+  <app-b-lable [id]="id()" [label]="label()" [subLable]="subLable()"></app-b-lable>
+  <div
+    class="input-container"
+    [pTooltip]="disabled() ? disabledTooltip() : ''"
+    tooltipPosition="top"
+  >
+    <p-multiSelect
+      [id]="id()"
+      [appendTo]="'body'"
+      [options]="options()"
+      [placeholder]="placeholder()"
+      [disabled]="disabled()"
+      [filter]="filter()"
+      [showToggleAll]="false"
+      [loading]="loading()"
+      [showClear]="true"
+      [class]="'w-full custom-multiselect ' + (hasError() ? '!border-red-500' : '')"
+      panelStyleClass="custom-multiselect-panel"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="value()"
+      (ngModelChange)="onModelChange($event)"
+      [maxSelectedLabels]="3"
+      display="chip"
+      (onFilter)="onFilterChange($event)"
+      (onLazyLoad)="onScrollPagination.emit($event)"
+    >
+      <ng-template #item let-item>
+        @if (item && item.label) {
+          {{ item.label }}
+        } @else {
+          <div class="flex items-center gap-2 py-1">
+            <div class="animate-pulse bg-gray-100 h-4 w-24 rounded"></div>
+            <span class="text-xs text-gray-400">Loading...</span>
+          </div>
+        }
+      </ng-template>
+    </p-multiSelect>
+    @if (hasError()) {
+      <p class="text-red-500 text-xs mt-1">{{ errorMessage() }}</p>
+    }
+  </div>
+</div>

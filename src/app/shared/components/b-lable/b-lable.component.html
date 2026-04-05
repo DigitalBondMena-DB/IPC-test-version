@@ -1,0 +1,8 @@
+<div class="flex items-center gap-0.5 mb-1.5">
+    @if (label()) {
+    <label class="m-0" [for]="id()">{{ label() }}</label>
+    @if (subLable()) {
+    <span class="text-gray-300 font-medium text-xs">{{ subLable() }}</span>
+    }
+    }
+</div>

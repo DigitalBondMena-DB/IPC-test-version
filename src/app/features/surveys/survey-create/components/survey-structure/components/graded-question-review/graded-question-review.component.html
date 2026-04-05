@@ -1,0 +1,196 @@
+<div class="mt-6 space-y-8 pb-20 pt-6 px-4 rounded-xl bg-white">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="p-2 bg-blue-50 rounded-lg text-blue-500">
+        <lucide-angular [img]="domainIcon" [size]="20" />
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-black-400">Review All Graded Questions</h2>
+        <p class="text-sm text-gray-500">
+          Review all questions across all domains. You can edit or delete any question.
+        </p>
+      </div>
+    </div>
+    <button
+      (click)="goToForm()"
+      class="flex items-center gap-2 bg-primary-500 text-white px-3 py-2.5 rounded-2xl hover:bg-blue-600 transition-all font-medium text-xs"
+    >
+      <lucide-angular [img]="plusIcon" [size]="20" />
+      Add New Question
+    </button>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 space-y-8">
+    @if (!isLoaded()) {
+      <div class="flex items-center justify-center py-16">
+        <span
+          class="w-8 h-8 border-3 border-gray-200 border-t-blue-500 rounded-full animate-spin"
+        ></span>
+      </div>
+    } @else if (allQuestionsFlat().length > 0) {
+      <div class="space-y-4">
+        <ng-container
+          *ngTemplateOutlet="domainList; context: { $implicit: domains, level: 0, parents: [], pathIds: [] }"
+        ></ng-container>
+      </div>
+    } @else {
+      <div class="flex flex-col items-center justify-center py-16 space-y-6">
+        <div
+          class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300"
+        >
+          <lucide-angular [img]="domainIcon" [size]="32" />
+        </div>
+        <div class="text-center">
+          <h3 class="text-xl font-bold text-black-400">No questions created yet</h3>
+          <p class="text-gray-500 max-w-sm mt-2">
+            Start by adding your first graded question to organize your survey behavior.
+          </p>
+        </div>
+        <button
+          (click)="goToForm()"
+          class="flex items-center gap-2 bg-primary-500 text-white px-8 py-3 rounded-xl hover:bg-blue-600 transition-all font-medium"
+        >
+          <lucide-angular [img]="plusIcon" [size]="20" />
+          Add First Question
+        </button>
+      </div>
+    }
+
+    <div class="flex items-center justify-between pt-8 border-t border-gray-100 mt-8">
+      <button
+        (click)="backFromGradedReview()"
+        class="flex items-center gap-2 px-14 py-3 text-sm rounded-lg bg-[#F9F9F9] text-gray-703 hover:bg-gray-100 transition-colors font-medium"
+      >
+        Back
+      </button>
+      <button
+        (click)="confirmGradedAndNavigate()"
+        class="flex items-center gap-2 px-14 py-3 rounded-lg bg-primary-500 text-white hover:bg-blue-600 text-sm transition-colors font-medium"
+      >
+        Next Step
+      </button>
+    </div>
+  </div>
+</div>
+
+<ng-template #domainList let-domainsArr let-level="level" let-parents="parents" let-pathIds="pathIds">
+  <div class="space-y-4">
+    @for (domainNode of domainsArr.controls; track $index) {
+      <div
+        class="rounded-2xl transition-all duration-200"
+        [class.border]="level === 0"
+        [class.border-gray-100]="level === 0"
+        [class.bg-[#F9FAFB]]="level === 0"
+        [class.bg-white]="level > 0"
+        [class.shadow-[0_2px_10px_rgb(0,0,0,0.05)]]="level === 0"
+        [class.mb-4]="level === 0"
+      >
+        <!-- Node Header -->
+        <div class="p-4 flex items-center justify-between group rounded-lg" [class.bg-white]="level > 0">
+          <div class="flex items-center gap-3 flex-1" [class.subdomain-card]="level > 0">
+            <button (click)="toggleNode(domainNode)" class="p-1 hover:bg-gray-100 rounded transition-colors">
+              <lucide-angular
+                [img]="chevronUpIcon"
+                [size]="18"
+                [class.[&_svg]:rotate-180]="domainNode.get('isExpanded')?.value"
+                class="text-gray-400 transition-all duration-200"
+              />
+            </button>
+
+            <!-- Level Badge -->
+            <div
+              [class.text-blue-600]="level === 0"
+              [class.bg-blue-100]="level === 0"
+              [class.text-green-600]="level === 1"
+              [class.bg-green-100]="level === 1"
+              [class.text-yellow-600]="level >= 2"
+              [class.bg-yellow-100]="level >= 2"
+              class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+            >
+              {{ createBadge(level, $index, pathIds) }}
+            </div>
+
+            <!-- Read-only text -->
+            <span class="flex-1 text-sm font-semibold text-black-400 truncate pr-4">
+              {{ domainNode.get('title')?.value }}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-3">
+            @if (weightingType() === 'manual') {
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">Percentage:</span>
+                <span class="w-16 px-2 py-1 border border-transparent rounded text-center text-sm font-bold focus:outline-0 text-black-400">
+                  {{ domainNode.get('weight')?.value }}
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (domainNode.get('isExpanded')?.value) {
+          <div class="px-4 pb-4 space-y-3">
+            @if (getSubdomains(domainNode).length > 0) {
+              <div class="ml-6 pl-6 border-gray-100 mt-2">
+                <ng-container
+                  *ngTemplateOutlet="
+                    domainList;
+                    context: {
+                      $implicit: getSubdomains(domainNode),
+                      level: level + 1,
+                      parents: parents.concat(domainNode.get('title')?.value),
+                      pathIds: pathIds.concat($index),
+                    }
+                  "
+                ></ng-container>
+              </div>
+            }
+
+            @if (getQuestions(domainNode).length > 0) {
+              <div class="ml-6 pl-6 space-y-2 mt-2">
+                @for (q of getQuestions(domainNode).controls; track $index) {
+                  @let item = { question: q.value, breadcrumbs: parents.concat(domainNode.get('title')?.value), domainNode: domainNode, questionIndex: $index };
+                  <div class="py-3.5 px-6.5 rounded-lg flex items-center justify-between border border-[#E5E7EB] bg-[#F9F9F9]">
+                    <div class="flex items-center gap-3">
+                      <div class="bg-gray-200 text-xs font-semibold text-gray-400 p-2 rounded-lg question-icon">
+                        {{ 'Q' + ($index + 1) }}
+                      </div>
+                      <div>
+                        <p class="font-medium text-[#111827]">{{ q.get('text')?.value }}</p>
+                        <p class="text-xs text-gray-703">
+                          Available Answers: {{ q.get('meta_data')?.value?.options?.length || 0 }}
+                        </p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <p class="font-medium text-sm text-gray-703 mr-2">
+                        highest score:
+                        <span class="font-normal text-sm text-black-400">
+                          {{ getMaxQuestionScore(q.get('meta_data')?.value?.weights) || 0 }}
+                        </span>
+                      </p>
+                      <button
+                        (click)="onEditFromGradedReview(item)"
+                        class="text-blue-400 hover:text-blue-500 rounded hover:bg-blue-50 transition-colors p-2.5 bg-[#EFF6FF]"
+                        title="Edit Question"
+                      >
+                        <lucide-angular [img]="pencilIcon" [size]="14" />
+                      </button>
+                      <button
+                        (click)="onDeleteFromGradedReview(item)"
+                        class="text-red-100 hover:text-red-500 bg-red-200 p-1 rounded hover:bg-red-50 transition-colors"
+                        title="Delete Question"
+                      >
+                        <lucide-angular [img]="trashIcon" [size]="16" />
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ng-template>

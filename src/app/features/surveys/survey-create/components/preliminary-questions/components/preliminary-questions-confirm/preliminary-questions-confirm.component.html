@@ -1,0 +1,48 @@
+<div class="space-y-4">
+  <h3 class="text-lg font-semibold text-black-400">Added Questions ({{ questions().length }})</h3>
+  <div class="grid gap-4">
+    @for (q of questions(); track $index) {
+      <div
+        class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between"
+      >
+        <div class="flex items-center gap-4">
+          <div
+            class="w-10 h-10 bg-blue-50 text-blue-500 rounded-lg flex items-center justify-center"
+          >
+            <span class="font-bold">{{ $index + 1 }}</span>
+          </div>
+          <div>
+            <h4 class="font-medium text-black-400">{{ q.text }}</h4>
+            <p class="text-sm text-gray-500">
+              {{ q.type }} • {{ q.description?.substring(0, 50)
+              }}{{ q.description?.length > 50 ? '...' : '' }}
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            (click)="editClick.emit($index)"
+            class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Edit Question"
+          >
+            <lucide-angular [img]="editIcon" [size]="18" />
+          </button>
+          <button
+            (click)="removeClick.emit($index)"
+            class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            title="Delete Question"
+          >
+            <lucide-angular [img]="trashIcon" [size]="18" />
+          </button>
+        </div>
+      </div>
+    }
+    @if (questions().length === 0) {
+      <div
+        class="text-center py-12 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200"
+      >
+        No active questions added.
+      </div>
+    }
+  </div>
+</div>

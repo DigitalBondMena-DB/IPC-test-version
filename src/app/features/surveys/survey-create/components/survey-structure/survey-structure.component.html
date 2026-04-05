@@ -1,0 +1,877 @@
+<div class="mt-6 space-y-8 pb-20 pt-6 px-4 rounded-xl bg-white">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="p-2 bg-blue-50 rounded-lg text-blue-500">
+        <lucide-angular [img]="domainIcon" [size]="20" />
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-black-400">
+          {{ currentView() === 'tree' ? 'Domain Structure' : 'Graded Questions' }}
+        </h2>
+        <p class="text-sm text-gray-500">
+          {{
+            currentView() === 'tree'
+              ? 'Build hierarchical survey structure (max 3 levels). Can click on title to edit.'
+              : 'Set up dynamic survey behavior based on user responses'
+          }}
+        </p>
+      </div>
+    </div>
+    @if (domains.length > 0 && currentView() === 'tree') {
+      <button
+        (click)="addDomain()"
+        class="flex items-center gap-2 bg-primary-500 text-white px-3 py-2.5 rounded-2xl hover:bg-blue-600 transition-all font-medium text-xs"
+      >
+        <lucide-angular [img]="plusIcon" [size]="20" />
+        Add New Domain
+      </button>
+    }
+  </div>
+
+  @if (currentView() === 'tree') {
+    <!-- Tree View -->
+    <div class="rounded-xl space-y-6">
+      @if (!isLoaded()) {
+        <!-- Loading State -->
+        <div class="flex items-center justify-center py-16">
+          <span
+            class="w-8 h-8 border-3 border-gray-200 border-t-blue-500 rounded-full animate-spin"
+          ></span>
+        </div>
+      } @else if (domains.length === 0) {
+        <!-- Empty State -->
+        <div class="flex flex-col items-center justify-center py-16 space-y-6">
+          <div
+            class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300"
+          >
+            <lucide-angular [img]="domainIcon" [size]="32" />
+          </div>
+          <div class="text-center">
+            <h3 class="text-xl font-bold text-black-400">No domains created yet</h3>
+            <p class="text-gray-500 max-w-sm mt-2">
+              Start by creating your first domain to organize your survey structure.
+            </p>
+          </div>
+          <button
+            (click)="addDomain()"
+            class="flex items-center gap-2 bg-primary-500 text-white px-8 py-3 rounded-xl hover:bg-blue-600 transition-all font-medium"
+          >
+            <lucide-angular [img]="plusIcon" [size]="20" />
+            Create First Domain
+          </button>
+        </div>
+      } @else {
+        <!-- Recursive Form Array -->
+        <div [formGroup]="structureForm" class="space-y-4">
+          <ng-container
+            *ngTemplateOutlet="
+              domainList;
+              context: { $implicit: domains, level: 0, parents: [], pathIds: [] }
+            "
+          ></ng-container>
+        </div>
+
+        <!-- Structure Guidelines -->
+        <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex gap-3 mt-8">
+          <div class="text-blue-500 pt-0.5">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-blue-900">Structure Guidelines</h4>
+            <p class="text-xs text-blue-700 mt-1 leading-relaxed">
+              Questions can only be assigned to the last sub-domain level (Level 3). Expand domains
+              to create nested structure up to 3 levels deep.
+            </p>
+          </div>
+        </div>
+      }
+
+      <!-- Bottom Actions -->
+      <div class="flex items-center justify-end pt-8 border-t border-gray-100 mt-8">
+        <div class="flex items-center gap-4">
+          <button
+            (click)="goToGradedQuestions()"
+            [disabled]="!isStructureValid()"
+            [pTooltip]="
+              !isStructureValid()
+                ? 'All leaf domains and subdomains must have at least one question.'
+                : ''
+            "
+            tooltipPosition="top"
+            class="flex items-center gap-2 px-14 py-3 rounded-lg bg-primary-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors font-medium"
+          >
+            Next Step
+          </button>
+        </div>
+      </div>
+    </div>
+  } @else if (currentView() === 'add_question') {
+    <!-- Add Question Form View -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 space-y-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-black-400 mb-1">Survey Name</label>
+          <input
+            type="text"
+            [value]="surveyName()"
+            readonly
+            class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-black-400 mb-1">Domain</label>
+          <input
+            type="text"
+            [value]="activeNodeContext()?.breadcrumbs?.[0] || ''"
+            readonly
+            class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-black-400 mb-1">Subdomain</label>
+          <input
+            type="text"
+            [value]="activeNodeContext()?.breadcrumbs?.slice(1)?.join(' > ') || ''"
+            readonly
+            class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+          />
+        </div>
+      </div>
+
+      <form [formGroup]="questionForm" class="space-y-6">
+        <div>
+          <app-b-input
+            id="q_name"
+            label="Question Name"
+            placeholder="Enter question name..."
+            formControlName="text"
+            class="text-black-400"
+          />
+          @if (questionForm.get('text')?.invalid && questionForm.get('text')?.touched) {
+            <small class="text-red-500 text-xs mt-1 block px-1">Question name is required</small>
+          }
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-black-400 mb-1">Question Description</label>
+          <textarea
+            formControlName="description"
+            placeholder="Enter question description..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] text-black-400"
+          ></textarea>
+          @if (
+            questionForm.get('description')?.invalid && questionForm.get('description')?.touched
+          ) {
+            <small class="text-red-500 text-xs mt-1 block px-1"
+              >Question description is required</small
+            >
+          }
+        </div>
+        <div class="bg-[#F8FAFC] border border-gray-100 rounded-xl p-6 space-y-6">
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-bold text-black-400">Answer Choices</label>
+            <div class="flex gap-4">
+              <button
+                type="button"
+                [disabled]="hasNaOption"
+                (click)="addNaOption()"
+                class="text-blue-500 text-sm font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                + Add N/A
+              </button>
+              <button
+                type="button"
+                (click)="addOption()"
+                class="text-blue-500 text-sm font-medium hover:underline"
+              >
+                + Add Choice
+              </button>
+            </div>
+          </div>
+
+          <div formArrayName="options" class="space-y-4">
+            @for (opt of optionsArray.controls; track $index) {
+              <div
+                [formGroupName]="$index"
+                class="flex items-center gap-4 bg-white p-3 rounded-xl border shadow-sm transition-colors"
+                [class.border-gray-100]="opt.valid || !opt.touched"
+                [class.border-red-300]="opt.invalid && opt.touched"
+              >
+                <div class="w-6 h-6 border-2 border-gray-300 rounded-full"></div>
+                <!-- N/A text is static and locked -->
+                @if (opt.get('isNa')?.value) {
+                  <input
+                    formControlName="text"
+                    readonly
+                    class="flex-1 text-sm border-none focus:ring-0 focus:outline-0 text-black-400 font-medium bg-transparent cursor-not-allowed"
+                  />
+                } @else {
+                  <input
+                    formControlName="text"
+                    placeholder="Enter option here..."
+                    class="flex-1 text-sm border-none focus:ring-0 focus:outline-0 text-black-400 font-medium"
+                  />
+                }
+
+                @if (!opt.get('isNa')?.value) {
+                  <div class="flex flex-col items-end gap-1">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-gray-500">Score:</span>
+                      <input
+                        type="number"
+                        formControlName="weight"
+                        class="w-16 px-2 py-1 border border-gray-200 rounded text-center text-sm font-bold bg-gray-50 focus:outline-0 text-black-400"
+                        [class.border-red-500]="
+                          opt.get('weight')?.invalid && opt.get('weight')?.touched
+                        "
+                      />
+                    </div>
+                    @if (opt.get('weight')?.hasError('min')) {
+                      <small class="text-red-500 text-[10px]">Min score is 0</small>
+                    }
+                  </div>
+                }
+
+                <button
+                  (click)="removeOption($index)"
+                  class="p-1.5 text-red-400 hover:text-red-500 transition-colors"
+                >
+                  <lucide-angular [img]="trashIcon" [size]="16" />
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </form>
+
+      <!-- Question View Actions -->
+      <div class="flex items-center justify-between pt-8 border-t border-gray-100 mt-8">
+        <button
+          (click)="onCancelView()"
+          class="flex items-center gap-2 px-14 py-3 text-sm rounded-lg bg-[#F9F9F9] text-gray-703 hover:bg-gray-100 transition-colors font-medium"
+        >
+          Cancel
+        </button>
+        <div class="flex items-center gap-4">
+          <button
+            type="button"
+            (click)="onAddQuestion()"
+            class="flex items-center gap-2 px-14 py-3 rounded-lg bg-[#16A34A] text-white hover:bg-green-700 text-sm transition-colors font-medium"
+          >
+            Add Question
+          </button>
+          <button
+            type="button"
+            (click)="onNextStepToReviewQuestions()"
+            class="flex items-center gap-2 px-14 py-3 rounded-lg bg-primary-500 text-white hover:bg-blue-600 text-sm transition-colors font-medium"
+          >
+            Next Step
+          </button>
+        </div>
+      </div>
+    </div>
+  } @else if (currentView() === 'review_questions') {
+    <!-- Review Questions View -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 space-y-8">
+      <div>
+        <h2 class="text-lg font-semibold text-black-400">Review Questions</h2>
+        <p class="text-sm text-gray-500">
+          {{ activeNodeContext()?.breadcrumbs?.join(' > ') || '' }}
+        </p>
+      </div>
+
+      @if (!activeNodeContext() || !activeNodeContext()?.domain) {
+        <div class="flex items-center justify-center py-16">
+          <p class="text-gray-500">No domain selected.</p>
+        </div>
+      } @else {
+        @if (getQuestions(activeNodeContext()!.domain).length > 0) {
+          <div class="space-y-3">
+            @for (q of getQuestions(activeNodeContext()!.domain).controls; track $index) {
+              <div
+                class="py-3.5 px-6.5 rounded-lg flex items-center justify-between border border-[#E5E7EB]"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="bg-gray-200 text-xs font-semibold text-gray-300 p-2 rounded-lg">
+                    {{ 'Q' + ($index + 1) }}
+                  </div>
+                  <div>
+                    <p class="font-medium text-[#111827]">{{ q.get('text')?.value }}</p>
+                    <p class="text-sm text-gray-703">
+                      {{ q.get('description')?.value || 'No description' }}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <p class="font-medium text-sm text-gray-703">
+                    highest score:
+                    <span class="font-normal text-sm text-black-400">
+                      {{ getMaxQuestionScore(q.get('meta_data')?.value?.weights) || 0 }}
+                    </span>
+                  </p>
+                  <button
+                    (click)="
+                      prepareEditQuestion(
+                        activeNodeContext()!.domain,
+                        activeNodeContext()!.breadcrumbs,
+                        $index
+                      )
+                    "
+                    class="text-blue-400 hover:text-blue-500 rounded hover:bg-blue-50 transition-colors p-2.5 bg-[#EFF6FF]"
+                    title="Edit Question"
+                  >
+                    <lucide-angular [img]="pencilIcon" [size]="14" />
+                  </button>
+                  <button
+                    (click)="
+                      getQuestions(activeNodeContext()!.domain).removeAt($index); syncDomains()
+                    "
+                    class="text-red-100 hover:text-red-500 bg-red-200 p-1 rounded hover:bg-red-50 transition-colors"
+                    title="Delete Question"
+                  >
+                    <lucide-angular [img]="trashIcon" [size]="16" />
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="flex flex-col items-center justify-center py-16 space-y-6">
+            <div
+              class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300"
+            >
+              <lucide-angular [img]="domainIcon" [size]="32" />
+            </div>
+            <div class="text-center">
+              <h3 class="text-xl font-bold text-black-400">No questions yet</h3>
+              <p class="text-gray-500 max-w-sm mt-2">
+                Add questions for this domain to see them here.
+              </p>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- Review Footer -->
+      <div class="flex items-center justify-between pt-8 border-t border-gray-100 mt-8">
+        <button
+          (click)="onCancelView()"
+          class="flex items-center gap-2 px-14 py-3 text-sm rounded-lg bg-[#F9F9F9] text-gray-703 hover:bg-gray-100 transition-colors font-medium"
+        >
+          Back to Structure
+        </button>
+        <button
+          (click)="goToGradedQuestions()"
+          [disabled]="!isStructureValid()"
+          [pTooltip]="
+            !isStructureValid()
+              ? 'All leaf domains and subdomains must have at least one question.'
+              : ''
+          "
+          tooltipPosition="top"
+          class="flex items-center gap-2 px-14 py-3 rounded-lg bg-primary-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors font-medium"
+        >
+          Next Step
+        </button>
+      </div>
+    </div>
+  } @else if (currentView() === 'graded_form') {
+    <!-- Graded Question Form View -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 space-y-8">
+      <!-- Tree Selector -->
+      <div class="rounded-xl border bg-[#F9FAFB] border-[#E5E7EB] p-6 custom-shadow">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="col-span-1 md:col-span-2">
+            <label for="graded_domain_tree" class="block font-semibold text-black-400 mb-1.5">
+              Domain & Subdomain <span class="text-red-500">*</span>
+            </label>
+            <p-treeSelect
+              [(ngModel)]="selectedGradedTreeNode"
+              id="graded_domain_tree"
+              [options]="domainTreeNodes()"
+              class="w-full"
+              appendTo="body"
+              placeholder="Select Domain / Subdomain"
+              [filter]="true"
+              filterBy="label,searchTitle"
+              filterPlaceholder="Search domain or subdomain..."
+              filterMode="lenient"
+              (onNodeSelect)="onGradedTreeNodeSelect($event)"
+            ></p-treeSelect>
+          </div>
+        </div>
+      </div>
+
+      <!-- Context Info -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-black-400 mb-1">Survey Name</label>
+          <input
+            type="text"
+            [value]="surveyName()"
+            readonly
+            class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-black-400 mb-1">Domain</label>
+          <input
+            type="text"
+            [value]="activeNodeContext()?.breadcrumbs?.[0] || ''"
+            readonly
+            class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-black-400 mb-1">Subdomain</label>
+          <input
+            type="text"
+            [value]="activeNodeContext()?.breadcrumbs?.slice(1)?.join(' > ') || ''"
+            readonly
+            class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+          />
+        </div>
+      </div>
+
+      <form [formGroup]="questionForm" class="space-y-6">
+        <div>
+          <app-b-input
+            id="graded_q_name"
+            label="Question Name"
+            placeholder="Enter question name..."
+            formControlName="text"
+            class="text-black-400"
+          />
+          @if (questionForm.get('text')?.invalid && questionForm.get('text')?.touched) {
+            <small class="text-red-500 text-xs mt-1 block px-1">Question name is required</small>
+          }
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-black-400 mb-1">Question Description</label>
+          <textarea
+            formControlName="description"
+            placeholder="Enter question description..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] text-black-400"
+          ></textarea>
+          @if (
+            questionForm.get('description')?.invalid && questionForm.get('description')?.touched
+          ) {
+            <small class="text-red-500 text-xs mt-1 block px-1"
+              >Question description is required</small
+            >
+          }
+        </div>
+        <div class="bg-[#F8FAFC] border border-gray-100 rounded-xl p-6 space-y-6">
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-bold text-black-400">Answer Choices</label>
+            <div class="flex gap-4">
+              <button
+                type="button"
+                [disabled]="hasNaOption"
+                (click)="addNaOption()"
+                class="text-blue-500 text-sm font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                + Add N/A
+              </button>
+              <button
+                type="button"
+                (click)="addOption()"
+                class="text-blue-500 text-sm font-medium hover:underline"
+              >
+                + Add Choice
+              </button>
+            </div>
+          </div>
+
+          <div formArrayName="options" class="space-y-4">
+            @for (opt of optionsArray.controls; track $index) {
+              <div
+                [formGroupName]="$index"
+                class="flex items-center gap-4 bg-white p-3 rounded-xl border shadow-sm transition-colors"
+                [class.border-gray-100]="opt.valid || !opt.touched"
+                [class.border-red-300]="opt.invalid && opt.touched"
+              >
+                <div class="w-6 h-6 border-2 border-gray-300 rounded-full"></div>
+                @if (opt.get('isNa')?.value) {
+                  <input
+                    formControlName="text"
+                    readonly
+                    class="flex-1 text-sm border-none focus:ring-0 focus:outline-0 text-black-400 font-medium bg-transparent cursor-not-allowed"
+                  />
+                } @else {
+                  <input
+                    formControlName="text"
+                    placeholder="Enter option here..."
+                    class="flex-1 text-sm border-none focus:ring-0 focus:outline-0 text-black-400 font-medium"
+                  />
+                }
+
+                @if (!opt.get('isNa')?.value) {
+                  <div class="flex flex-col items-end gap-1">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs text-gray-500">Score:</span>
+                      <input
+                        type="number"
+                        formControlName="weight"
+                        class="w-16 px-2 py-1 border border-gray-200 rounded text-center text-sm font-bold bg-gray-50 focus:outline-0 text-black-400"
+                        [class.border-red-500]="
+                          opt.get('weight')?.invalid && opt.get('weight')?.touched
+                        "
+                      />
+                    </div>
+                    @if (opt.get('weight')?.hasError('min')) {
+                      <small class="text-red-500 text-[10px]">Min score is 0</small>
+                    }
+                  </div>
+                }
+
+                <button
+                  (click)="removeOption($index)"
+                  class="p-1.5 text-red-400 hover:text-red-500 transition-colors"
+                >
+                  <lucide-angular [img]="trashIcon" [size]="16" />
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </form>
+
+      <!-- Graded Form Footer -->
+      <div class="flex items-center justify-between pt-8 border-t border-gray-100 mt-8">
+        <button
+          (click)="backFromGradedForm()"
+          class="flex items-center gap-2 px-14 py-3 text-sm rounded-lg bg-[#F9F9F9] text-gray-703 hover:bg-gray-100 transition-colors font-medium"
+        >
+          Back
+        </button>
+        <div class="flex items-center gap-4">
+          <button
+            type="button"
+            (click)="confirmGradedAndNavigate()"
+            class="flex items-center gap-2 px-14 py-3 text-sm rounded-lg bg-[#F9F9F9] text-gray-703 hover:bg-gray-100 transition-colors font-medium"
+          >
+            Skip
+          </button>
+          <button
+            type="button"
+            (click)="onAddGradedQuestion()"
+            [class.bg-[#16A34A]]="!isEditMode()"
+            [class.hover:bg-green-700]="!isEditMode()"
+            [class.bg-blue-500]="isEditMode()"
+            [class.hover:bg-blue-600]="isEditMode()"
+            class="flex items-center gap-2 px-14 py-3 rounded-lg text-white text-sm transition-colors font-medium"
+          >
+            {{ isEditMode() ? 'Update Question' : 'Add New Question' }}
+          </button>
+
+          <button
+            type="button"
+            (click)="goToGradedReview()"
+            class="flex items-center gap-2 px-14 py-3 rounded-lg bg-primary-500 text-white hover:bg-blue-600 text-sm transition-colors font-medium"
+          >
+            Next Step
+          </button>
+        </div>
+      </div>
+    </div>
+  } @else if (currentView() === 'graded_review') {
+    <!-- Graded Review View - All Questions from All Domains -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 space-y-8">
+      <div>
+        <h2 class="text-lg font-semibold text-black-400">Review All Graded Questions</h2>
+        <p class="text-sm text-gray-500">
+          Review all questions across all domains. You can edit or delete any question.
+        </p>
+      </div>
+
+      @if (getAllQuestionsFlat().length > 0) {
+        <div class="space-y-3">
+          @for (item of getAllQuestionsFlat(); track $index) {
+            <div
+              class="py-3.5 px-6.5 rounded-lg flex items-center justify-between border border-[#E5E7EB]"
+            >
+              <div class="flex items-center gap-3">
+                <div class="bg-gray-200 text-xs font-semibold text-gray-300 p-2 rounded-lg">
+                  {{ 'Q' + ($index + 1) }}
+                </div>
+                <div>
+                  <p class="font-medium text-[#111827]">{{ item.question.text }}</p>
+                  <p class="text-xs text-gray-500">
+                    {{ item.question.description || 'No description' }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1">
+                <p class="font-medium text-sm text-gray-703 mr-2">
+                  highest score:
+                  <span class="font-normal text-sm text-black-400">
+                    {{ getMaxQuestionScore(item.question.meta_data?.weights) || 0 }}
+                  </span>
+                </p>
+                <button
+                  (click)="onEditFromGradedReview(item)"
+                  class="text-blue-400 hover:text-blue-500 rounded hover:bg-blue-50 transition-colors p-2.5 bg-[#EFF6FF]"
+                  title="Edit Question"
+                >
+                  <lucide-angular [img]="pencilIcon" [size]="14" />
+                </button>
+                <button
+                  (click)="onDeleteFromGradedReview(item)"
+                  class="text-red-100 hover:text-red-500 bg-red-200 p-1 rounded hover:bg-red-50 transition-colors"
+                  title="Delete Question"
+                >
+                  <lucide-angular [img]="trashIcon" [size]="16" />
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="flex flex-col items-center justify-center py-16 space-y-6">
+          <div
+            class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300"
+          >
+            <lucide-angular [img]="domainIcon" [size]="32" />
+          </div>
+          <div class="text-center">
+            <h3 class="text-xl font-bold text-black-400">No questions yet</h3>
+            <p class="text-gray-500 max-w-sm mt-2">Go back and add questions to see them here.</p>
+          </div>
+        </div>
+      }
+
+      <!-- Graded Review Footer -->
+      <div class="flex items-center justify-between pt-8 border-t border-gray-100 mt-8">
+        <button
+          (click)="backFromGradedReview()"
+          class="flex items-center gap-2 px-14 py-3 text-sm rounded-lg bg-[#F9F9F9] text-gray-703 hover:bg-gray-100 transition-colors font-medium"
+        >
+          Back
+        </button>
+        <button
+          (click)="confirmGradedAndNavigate()"
+          class="flex items-center gap-2 px-14 py-3 rounded-lg bg-primary-500 text-white hover:bg-blue-600 text-sm transition-colors font-medium"
+        >
+          Next Step
+        </button>
+      </div>
+    </div>
+  }
+</div>
+
+<ng-template
+  #domainList
+  let-domainsArr
+  let-level="level"
+  let-parents="parents"
+  let-pathIds="pathIds"
+>
+  <div class="space-y-4">
+    @for (domainNode of domainsArr.controls; track $index) {
+      <div
+        class="rounded-2xl transition-all duration-200"
+        [class.border]="level === 0"
+        [class.border-gray-100]="level === 0"
+        [class.bg-white]="level > 0 && isConfirmationView()"
+        [class.bg-[#F9FAFB]]="level === 0"
+        [class.shadow-[0_2px_10px_rgb(0,0,0,0.05)]]="level === 0"
+        [class.mb-4]="level === 0"
+      >
+        <!-- Node Header -->
+        <div
+          class="p-4 flex items-center justify-between group rounded-lg"
+          [class.bg-white]="level > 0"
+        >
+          <div class="flex items-center gap-3 flex-1" [class.subdomain-card]="level > 0">
+            <button
+              (click)="toggleNode(domainNode)"
+              class="p-1 hover:bg-gray-100 rounded transition-colors"
+            >
+              <lucide-angular
+                [img]="chevronUpIcon"
+                [size]="18"
+                [class.[&_svg]:rotate-180]="domainNode.get('isExpanded')?.value"
+                class="text-gray-400 transition-all duration-200"
+              />
+            </button>
+
+            <!-- Level Badge -->
+            <div
+              [class.text-blue-600]="level === 0"
+              [class.bg-blue-100]="level === 0"
+              [class.text-green-600]="level === 1"
+              [class.bg-green-100]="level === 1"
+              [class.text-yellow-600]="level >= 2"
+              [class.bg-yellow-100]="level >= 2"
+              class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+            >
+              {{ createBadge(level, $index, pathIds) }}
+            </div>
+
+            <!-- Title Input -->
+            @if (!isConfirmationView()) {
+              <input
+                [formControl]="domainNode.get('title')"
+                (blur)="onNodeBlur(domainNode)"
+                placeholder="Enter name..."
+                class="flex-1 bg-transparent border-none focus:outline-0 text-sm font-semibold text-black-400"
+              />
+            } @else {
+              <span class="flex-1 text-sm font-semibold text-black-400 truncate pr-4">
+                {{ domainNode.get('title')?.value }}
+              </span>
+            }
+          </div>
+
+          <div class="flex items-center gap-3">
+            <!-- Score Input (Manual Weighting) -->
+            @if (weightingType() === 'manual') {
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">Percentage:</span>
+                <input
+                  type="number"
+                  max="100"
+                  [formControl]="domainNode.get('weight')"
+                  (blur)="onNodeBlur(domainNode)"
+                  class="w-16 px-2 py-1 border border-gray-200 rounded text-center text-sm font-bold bg-white focus:outline-0 text-black-400"
+                />
+              </div>
+            }
+
+            <!-- Add Dropdown Simulation -->
+            <div class="relative group/menu">
+              <button
+                class="p-2 bg-blue-50 text-blue-500 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <lucide-angular [img]="plusIcon" [size]="18" />
+              </button>
+
+              <!-- Simple Toggle-less Menu on Hover for MVP or Click Logic -->
+              <div
+                class="hidden group-hover/menu:block absolute right-0 bg-white text-black-400 w-48 rounded-lg z-10 py-2"
+              >
+                @if (canAddSubdomain(domainNode) && level < 3) {
+                  <button
+                    (click)="addSubdomain(domainNode)"
+                    class="w-full text-left px-3.5 py-2 text-[17px] font-medium flex items-center gap-2"
+                  >
+                    Add Subdomain
+                  </button>
+                }
+                @if (canAddQuestion(domainNode)) {
+                  <button
+                    (click)="
+                      prepareAddQuestion(domainNode, parents.concat(domainNode.get('title')?.value))
+                    "
+                    class="w-full text-left px-3.5 py-2 text-[17px] font-medium flex items-center gap-2"
+                  >
+                    Add Question
+                  </button>
+                }
+              </div>
+            </div>
+
+            <button
+              (click)="
+                level === 0 ? removeDomain($index) : removeSubdomain(domainsArr.parent, $index)
+              "
+              class="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <lucide-angular [img]="trashIcon" [size]="18" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Nested Content -->
+        @if (domainNode.get('isExpanded')?.value) {
+          <div class="px-4 pb-4 space-y-3">
+            <!-- Subdomains -->
+            @if (getSubdomains(domainNode).length > 0) {
+              <div class="ml-6 pl-6 border-gray-100 mt-2">
+                <ng-container
+                  *ngTemplateOutlet="
+                    domainList;
+                    context: {
+                      $implicit: getSubdomains(domainNode),
+                      level: level + 1,
+                      parents: parents.concat(domainNode.get('title')?.value),
+                      pathIds: pathIds.concat($index),
+                    }
+                  "
+                ></ng-container>
+              </div>
+            }
+
+            @if (getQuestions(domainNode).length > 0) {
+              <div class="ml-6 pl-6 space-y-2 mt-2">
+                @for (q of getQuestions(domainNode).controls; track $index) {
+                  <div
+                    class="py-3.5 px-6.5 rounded-lg flex items-center justify-between border"
+                    [class.border-[#E5E7EB]]="isConfirmationView()"
+                    [class.border-[#A7F3D0]]="isConfirmationView()"
+                    [class.bg-[#F9F9F9]]="isConfirmationView()"
+                    [class.bg-green-50]="!isConfirmationView()"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="bg-[#D1FAE5] text-xs font-semibold text-gray-300 p-2 rounded-lg question-icon"
+                      >
+                        {{ 'Q' + ($index + 1) }}
+                      </div>
+                      <div>
+                        <p class="font-medium text-[#111827]">{{ q.get('text')?.value }}</p>
+                        <p
+                          class="text-xs text-[#047857]"
+                          [class.text-gray-703]="isConfirmationView()"
+                        >
+                          Available Answers: {{ q.get('meta_data')?.value?.options?.length || 0 }}
+                        </p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <button
+                        (click)="
+                          prepareEditQuestion(
+                            domainNode,
+                            parents.concat(domainNode.get('title')?.value),
+                            $index
+                          )
+                        "
+                        class="text-blue-400 hover:text-blue-500 p-1 rounded hover:bg-blue-50 transition-colors"
+                        title="Edit Question"
+                      >
+                        <lucide-angular [img]="pencilIcon" [size]="14" />
+                      </button>
+                      <button
+                        (click)="getQuestions(domainNode).removeAt($index); syncDomains()"
+                        class="text-red-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors"
+                        title="Delete Question"
+                      >
+                        <lucide-angular [img]="trashIcon" [size]="14" />
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ng-template>
