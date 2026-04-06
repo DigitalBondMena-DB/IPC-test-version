@@ -64,18 +64,18 @@
     </div>
   </div>
 
-  @if (allLogicRules().length > 0) {
+  @if (ruleListItems().length > 0) {
     <div class="grid gap-6">
-      @for (ruleEntry of allLogicRules(); track ruleEntry.rule.id; let i = $index) {
+      @for (ruleEntry of ruleListItems(); track ruleEntry.rule.id) {
         <div class="bg-white rounded-xl border border-blue-200 p-6 custom-shadow relative">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-bold text-blue-500">Conditional Logic</h3>
             <div class="flex items-center gap-2">
-              @if (reviewEditIndex() !== i) {
+              @if (reviewEditIndex() !== ruleEntry.index) {
                 <button
                   type="button"
                   class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
-                  (click)="onEditRule(i)"
+                  (click)="onEditRule(ruleEntry.index)"
                 >
                   <lucide-angular [img]="EditIcon" class="w-5 h-5"></lucide-angular>
                 </button>
@@ -83,7 +83,7 @@
                 <button
                   type="button"
                   class="flex items-center gap-2 text-white bg-primary-500 hover:bg-primary-600 px-4 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all transform active:scale-95"
-                  (click)="saveReviewRule(i)"
+                  (click)="saveReviewRule(ruleEntry.index)"
                 >
                   <lucide-angular [img]="CheckIcon" class="w-4 h-4"></lucide-angular>
                   Save Rule
@@ -99,15 +99,15 @@
               <button
                 type="button"
                 class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                (click)="onDeleteRule(i)"
+                (click)="onDeleteRule(ruleEntry.index)"
               >
                 <lucide-angular [img]="TrashIcon" class="w-5 h-5"></lucide-angular>
               </button>
             </div>
           </div>
 
-          @if (reviewEditIndex() === i && reviewEditForm(); as form) {
-            <form [formGroup]="form" class="space-y-6 text-black-400 mt-4">
+          @if (reviewEditIndex() === ruleEntry.index && editViewModel(); as evm) {
+            <form [formGroup]="evm.form" class="space-y-6 text-black-400 mt-4">
               <!-- If This Question -->
               <div class="flex items-start gap-4">
                 <div
@@ -117,9 +117,9 @@
                 </div>
                 <div class="flex-1">
                   <app-b-select
-                    id="review_trigger_question_{{ i }}"
+                    id="review_trigger_question_{{ ruleEntry.index }}"
                     label="This Question"
-                    [options]="getReviewTriggerOptions(form.get('trigger_question_id')?.value)"
+                    [options]="evm.triggerOptions"
                     formControlName="trigger_question_id"
                     placeholder="Select a question..."
                   ></app-b-select>
@@ -135,9 +135,9 @@
                 </div>
                 <div class="flex-1">
                   <app-b-select
-                    [id]="'review_trigger_answer_' + i"
+                    [id]="'review_trigger_answer_' + ruleEntry.index"
                     label="The answer"
-                    [options]="getQuestionOptions(form.get('trigger_question_id')?.value)"
+                    [options]="evm.questionOptions"
                     formControlName="trigger_answer"
                     placeholder="Select an answer option..."
                   ></app-b-select>
@@ -157,13 +157,13 @@
                     @for (opt of actionOptions; track opt.value) {
                       <div class="flex items-center gap-2">
                         <p-radioButton
-                          [inputId]="'review_action_' + i + '_' + opt.value"
+                          [inputId]="'review_action_' + ruleEntry.index + '_' + opt.value"
                           [value]="opt.value"
                           formControlName="ui_action_type"
                           class="radio-btn"
                         ></p-radioButton>
                         <label
-                          [for]="'review_action_' + i + '_' + opt.value"
+                          [for]="'review_action_' + ruleEntry.index + '_' + opt.value"
                           class="text-sm text-[#6F6F6F]"
                           >{{ opt.label }}</label
                         >
@@ -173,15 +173,15 @@
 
                   <!-- Dynamic Fields based on Action -->
                   @if (
-                    form.get('ui_action_type')?.value &&
+                    evm.form.get('ui_action_type')?.value &&
                     !['mandatory_comment', 'mandatory_action_plan'].includes(
-                      form.get('ui_action_type')?.value
+                      evm.form.get('ui_action_type')?.value
                     )
                   ) {
                     <div class="mt-6 space-y-4">
-                      @if (form.get('ui_action_type')?.value === 'alert') {
+                      @if (evm.form.get('ui_action_type')?.value === 'alert') {
                         <app-b-select
-                          id="review_alert_type_{{ i }}"
+                          id="review_alert_type_{{ ruleEntry.index }}"
                           label="Alert Type"
                           [options]="alertTypeOptions"
                           formControlName="alert_type"
@@ -191,47 +191,39 @@
 
                       @if (
                         ['show', 'hide', 'na', 'limited_answer'].includes(
-                          form.get('ui_action_type')?.value
+                          evm.form.get('ui_action_type')?.value
                         )
                       ) {
                         <app-b-select
-                          [id]="'review_target_question_id_' + i"
+                          [id]="'review_target_question_id_' + ruleEntry.index"
                           label="Apply Action to Question"
-                          [options]="getReviewTargetOptions(form.get('trigger_question_id')?.value)"
-                          [ngModel]="getTargetId(form)"
-                          (ngModelChange)="setTargetId(form, $event)"
+                          [options]="evm.targetOptions"
+                          [ngModel]="getTargetId(evm.form)"
+                          (ngModelChange)="setTargetId(evm.form, $event)"
                           [ngModelOptions]="{ standalone: true }"
                           placeholder="Select a question..."
                         ></app-b-select>
                       }
 
                       @if (
-                        form.get('ui_action_type')?.value === 'limited_answer' && getTargetId(form)
+                        evm.form.get('ui_action_type')?.value === 'limited_answer' && evm.targetId
                       ) {
                         <div class="mt-4">
                           <label class="block text-sm font-medium text-gray-703 mb-2"
                             >Question's Answers</label
                           >
                           <div class="grid grid-cols-1 gap-2">
-                            @for (ans of getQuestionOptions(getTargetId(form)); track ans.value) {
+                            @for (ans of evm.targetAnswerOptions; track ans.value) {
                               <app-b-checkbox
                                 class="rounded-md! border-gray-300! checked:border-primary-500!"
-                                [id]="'review_ans_' + i + '_' + ans.value"
+                                [id]="'review_ans_' + ruleEntry.index + '_' + ans.value"
                                 [label]="ans.label"
-                                [ngModel]="isAnswerSelected(form, ans.value)"
-                                (ngModelChange)="toggleAnswer(form, ans.value)"
+                                [ngModel]="isAnswerSelected(evm.form, ans.value)"
+                                (ngModelChange)="toggleAnswer(evm.form, ans.value)"
                                 [ngModelOptions]="{ standalone: true }"
                               ></app-b-checkbox>
                             }
                           </div>
-                          @if (
-                            form.get('target_answer_options')?.touched &&
-                            form.get('target_answer_options')?.hasError('requiredAnswers')
-                          ) {
-                            <p class="mt-2 text-xs text-red-500 font-medium">
-                              Please select at least one answer option.
-                            </p>
-                          }
                         </div>
                       }
                     </div>
@@ -248,7 +240,7 @@
                   If
                 </div>
                 <div class="font-semibold text-[#111827]">
-                  {{ ruleEntry.triggerQuestion.text }}
+                  {{ ruleEntry.triggerLabel }}
                 </div>
               </div>
               <div class="flex items-center gap-4">
@@ -271,10 +263,10 @@
                   <span class="font-semibold text-[#111827]">{{
                     ruleEntry.rule.action_type | uppercase
                   }}</span>
-                  @if (ruleEntry.rule.target_question_id) {
+                  @if (ruleEntry.targetLabel) {
                     on question:
                     <span class="text-blue-600 italic"
-                      >"{{ getQuestionTextById(ruleEntry.rule.target_question_id) }}"</span
+                      >"{{ ruleEntry.targetLabel }}"</span
                     >
                   }
                   @if (ruleEntry.rule.target_answer_options?.length) {

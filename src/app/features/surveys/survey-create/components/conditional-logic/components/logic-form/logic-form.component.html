@@ -44,26 +44,26 @@
     </div>
   </div>
 
-  @if (rulesForms().length > 0) {
+  @if (ruleViewModels().length > 0) {
     <div class="space-y-6">
-      @for (ruleForm of rulesForms(); track ruleForm; let i = $index) {
+      @for (vm of ruleViewModels(); track vm.id) {
         <div class="bg-white rounded-xl border border-blue-200 p-6 custom-shadow relative">
           <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-bold text-blue-500">Conditional Logic</h3>
             <div class="flex items-center gap-2">
-              @if (!ruleForm.get('isEditing')?.value) {
+              @if (!vm.isEditing) {
                 <button
                   type="button"
                   class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
-                  (click)="editRule(i)"
+                  (click)="editRule(vm.index)"
                 >
                   <lucide-angular [img]="EditIcon" class="w-5 h-5"></lucide-angular>
                 </button>
-              } @else if (ruleForm.get('id')?.value) {
+              } @else if (vm.form.get('id')?.value) {
                 <button
                   type="button"
                   class="flex items-center gap-2 text-white bg-primary-500 hover:bg-primary-600 px-4 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all transform active:scale-95"
-                  (click)="saveRule(i)"
+                  (click)="saveRule(vm.index)"
                 >
                   <lucide-angular [img]="CheckIcon" class="w-4 h-4"></lucide-angular>
                   Save Rule
@@ -72,23 +72,23 @@
               <button
                 type="button"
                 class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                (click)="removeRule(i)"
+                (click)="removeRule(vm.index)"
               >
                 <lucide-angular [img]="TrashIcon" class="w-5 h-5"></lucide-angular>
               </button>
             </div>
           </div>
 
-          <form [formGroup]="ruleForm" class="space-y-6 text-black-400">
+          <form [formGroup]="vm.form" class="space-y-6 text-black-400">
             <div class="flex items-start gap-4">
               <div class="mt-2 text-xs font-semibold px-2 py-1 bg-blue-50 text-blue-500 rounded">
                 If
               </div>
               <div class="flex-1">
                 <app-b-select
-                  id="trigger_question_{{ i }}"
+                  id="trigger_question_{{ vm.index }}"
                   label="This Question"
-                  [options]="getTriggerQuestionOptions(ruleForm.get('trigger_question_id')?.value)"
+                  [options]="vm.triggerOptions"
                   formControlName="trigger_question_id"
                   placeholder="Select a question..."
                 ></app-b-select>
@@ -103,9 +103,9 @@
               </div>
               <div class="flex-1">
                 <app-b-select
-                  [id]="'trigger_answer_' + i"
+                  [id]="'trigger_answer_' + vm.index"
                   label="The answer"
-                  [options]="getQuestionOptions(ruleForm.get('trigger_question_id')?.value)"
+                  [options]="vm.questionOptions"
                   formControlName="trigger_answer"
                   placeholder="Select an answer option..."
                 ></app-b-select>
@@ -122,13 +122,13 @@
                   @for (opt of actionOptions; track opt.value) {
                     <div class="flex items-center gap-2">
                       <p-radioButton
-                        [inputId]="'action_' + i + '_' + opt.value"
+                        [inputId]="'action_' + vm.index + '_' + opt.value"
                         [value]="opt.value"
                         formControlName="ui_action_type"
                         class="radio-btn"
                       ></p-radioButton>
                       <label
-                        [for]="'action_' + i + '_' + opt.value"
+                        [for]="'action_' + vm.index + '_' + opt.value"
                         class="text-sm text-[#6F6F6F]"
                         >{{ opt.label }}</label
                       >
@@ -137,15 +137,15 @@
                 </div>
 
                 @if (
-                  ruleForm.get('ui_action_type')?.value &&
+                  vm.form.get('ui_action_type')?.value &&
                   !['mandatory_comment', 'mandatory_action_plan'].includes(
-                    ruleForm.get('ui_action_type')?.value
+                    vm.form.get('ui_action_type')?.value
                   )
                 ) {
                   <div class="mt-6 space-y-4">
-                    @if (ruleForm.get('ui_action_type')?.value === 'alert') {
+                    @if (vm.form.get('ui_action_type')?.value === 'alert') {
                       <app-b-select
-                        id="alert_type_{{ i }}"
+                        id="alert_type_{{ vm.index }}"
                         label="Alert Type"
                         [options]="alertTypeOptions"
                         formControlName="alert_type"
@@ -155,47 +155,45 @@
 
                     @if (
                       ['show', 'hide', 'na', 'limited_answer'].includes(
-                        ruleForm.get('ui_action_type')?.value
+                        vm.form.get('ui_action_type')?.value
                       )
                     ) {
                       <app-b-select
-                        [id]="'target_question_id_' + i"
+                        [id]="'target_question_id_' + vm.index"
                         label="Apply Action to Question"
-                        [options]="
-                          getFilteredTargetOptions(ruleForm.get('trigger_question_id')?.value)
-                        "
-                        [ngModel]="getTargetId(ruleForm)"
-                        (ngModelChange)="setTargetId(ruleForm, $event)"
+                        [options]="vm.targetQuestionOptions"
+                        [ngModel]="getTargetId(vm.form)"
+                        (ngModelChange)="setTargetId(vm.form, $event)"
                         [ngModelOptions]="{ standalone: true }"
-                        [disabled]="ruleForm.disabled"
+                        [disabled]="vm.form.disabled"
                         placeholder="Select a question..."
                       ></app-b-select>
                     }
 
                     @if (
-                      ruleForm.get('ui_action_type')?.value === 'limited_answer' &&
-                      getTargetId(ruleForm)
+                      vm.form.get('ui_action_type')?.value === 'limited_answer' &&
+                      getTargetId(vm.form)
                     ) {
                       <div class="mt-4">
                         <label class="block text-sm font-medium text-gray-703 mb-2"
                           >Question's Answers</label
                         >
                         <div class="grid grid-cols-1 gap-2">
-                          @for (ans of getQuestionOptions(getTargetId(ruleForm)); track ans.value) {
+                          @for (ans of vm.targetAnswerOptions; track ans.value) {
                             <app-b-checkbox
                               class="rounded-md! border-gray-300! checked:border-primary-500!"
-                              [id]="'ans_' + i + '_' + ans.value"
+                              [id]="'ans_' + vm.index + '_' + ans.value"
                               [label]="ans.label"
-                              [ngModel]="isAnswerSelected(ruleForm, ans.value)"
-                              (ngModelChange)="toggleAnswer(ruleForm, ans.value)"
+                              [ngModel]="isAnswerSelected(vm.form, ans.value)"
+                              (ngModelChange)="toggleAnswer(vm.form, ans.value)"
                               [ngModelOptions]="{ standalone: true }"
-                              [disabled]="ruleForm.disabled"
+                              [disabled]="vm.form.disabled"
                             ></app-b-checkbox>
                           }
                         </div>
                         @if (
-                          ruleForm.get('target_answer_options')?.touched &&
-                          ruleForm.get('target_answer_options')?.hasError('requiredAnswers')
+                          vm.form.get('target_answer_options')?.touched &&
+                          vm.form.get('target_answer_options')?.hasError('requiredAnswers')
                         ) {
                           <p class="mt-2 text-xs text-red-500 font-medium">
                             Please select at least one answer option.

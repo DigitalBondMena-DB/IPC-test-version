@@ -17,9 +17,14 @@ export class AuthService {
     this.initializeFromStorage();
   }
   private initializeFromStorage(): void {
-    const storedUserData = localStorage.getItem(this.USERDATA_STORAGE);
-    if (storedUserData) {
-      this._userData.set(JSON.parse(storedUserData));
+    try {
+      const storedUserData = localStorage.getItem(this.USERDATA_STORAGE);
+      if (storedUserData) {
+        this._userData.set(JSON.parse(storedUserData));
+      }
+    } catch (error) {
+      console.error('Error parsing user data from storage', error);
+      this.clearUserData();
     }
   }
   setUserData(userData: ILoginResponse): void {

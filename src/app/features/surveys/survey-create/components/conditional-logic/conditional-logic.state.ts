@@ -6,7 +6,7 @@ import { API_CONFIG } from '@/core/config/api.config';
 import { SurveyService } from '@features/surveys/services/survey.service';
 import { SurveyLogicService } from '@features/surveys/services/survey-logic.service';
 import { MessageService, TreeNode } from 'primeng/api';
-import { startWith, distinctUntilChanged, pairwise } from 'rxjs';
+import { startWith, distinctUntilChanged, pairwise, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -22,7 +22,6 @@ export class ConditionalLogicStateService {
   private readonly route = inject(ActivatedRoute);
 
   readonly standaloneMode = computed(() => {
-    // Traverse up to find 'id' parameter in any parent route
     let currentRoute: ActivatedRoute | null = this.route;
     while (currentRoute) {
       if (currentRoute.snapshot.paramMap.get('id')) return false;
@@ -56,16 +55,27 @@ export class ConditionalLogicStateService {
   });
 
   readonly allQuestions = signal<any[]>([]);
+  
+  // Optimization: Question lookup map O(1)
+  readonly questionsMap = computed(() => {
+    const map = new Map<number, any>();
+    this.allQuestions().forEach(q => map.set(q.id, q));
+    return map;
+  });
+
   readonly domainTreeNodes = signal<TreeNode[]>([]);
   readonly selectedTreeNode = signal<any>(null);
   readonly currentSubdomainQuestions = signal<any[]>([]);
-  readonly rulesForms = signal<FormGroup[]>([]);
+  
+  // Refactored: Track editing IDs instead of counting FormGroups internally
+  readonly editingIds = signal<Set<number | string>>(new Set());
 
   // For review step
   readonly reviewEditIndex = signal<number | null>(null);
   readonly reviewEditForm = signal<FormGroup | null>(null);
   readonly reviewDomainFilterId = signal<string | null>(null);
 
+  // Optimized: O(n) complexity for rule aggregation
   readonly allLogicRules = computed(() => {
     const questions = this.allQuestions();
     const domainFilter = this.reviewDomainFilterId();
@@ -73,11 +83,7 @@ export class ConditionalLogicStateService {
     const ruleIds = new Set<number>();
 
     questions.forEach((q) => {
-      // If we have a domain filter, skip questions that don't match
-      if (domainFilter) {
-        const matches = q.domainIds?.includes(domainFilter);
-        if (!matches) return;
-      }
+      if (domainFilter && !q.domainIds?.includes(domainFilter)) return;
 
       if (q.logic_rules) {
         q.logic_rules.forEach((r: any) => {
@@ -92,10 +98,7 @@ export class ConditionalLogicStateService {
   });
 
   readonly isAnyRuleEditing = computed(() => {
-    return (
-      this.rulesForms().some((form) => form.get('isEditing')?.value && !!form.get('id')?.value) ||
-      this.reviewEditIndex() !== null
-    );
+    return this.editingIds().size > 0 || this.reviewEditIndex() !== null;
   });
 
   readonly actionOptions = [
@@ -143,7 +146,6 @@ export class ConditionalLogicStateService {
       searchTitle: `${domain.title} ${questionsText}`,
     };
 
-    // Store the hierarchy info in each question
     const questions = (domain.questions || []).map((q: any) => ({
       ...q,
       domainIds,
@@ -187,7 +189,6 @@ export class ConditionalLogicStateService {
       isEditing: [isEditing],
     });
 
-    // Add custom validator AFTER group is initialized to avoid ReferenceError
     group.get('target_answer_options')?.setValidators([
       (control: any) => {
         const actionType = group.get('ui_action_type')?.value;
@@ -198,18 +199,15 @@ export class ConditionalLogicStateService {
       },
     ]);
 
-    if (!isEditing) {
-      group.disable();
-    }
+    if (!isEditing) group.disable();
 
-    // Force re-validation of answers when action type changes
     group.get('ui_action_type')?.valueChanges.subscribe(() => {
       group.get('target_answer_options')?.updateValueAndValidity();
     });
 
     group
       .get('ui_action_type')
-      ?.valueChanges.pipe(startWith(uiActionType), distinctUntilChanged(), pairwise())
+      ?.valueChanges.pipe(distinctUntilChanged(), pairwise())
       .subscribe(([oldVal, newVal]) => {
         if (oldVal && newVal && oldVal !== newVal && group.get('isEditing')?.value) {
           group.patchValue(
@@ -228,7 +226,7 @@ export class ConditionalLogicStateService {
 
   getQuestionOptions(questionId: number | null): any[] {
     if (!questionId) return [];
-    const q = this.allQuestions().find((q: any) => q.id === questionId);
+    const q = this.questionsMap().get(questionId);
     if (!q || !q.meta_data || !q.meta_data.options) return [];
     return q.meta_data.options.map((opt: string) => ({ label: opt, value: opt }));
   }
@@ -239,128 +237,45 @@ export class ConditionalLogicStateService {
       value: q.id,
     }));
     if (currentRuleTriggerId && !options.find((opt) => opt.value === currentRuleTriggerId)) {
-      const q = this.allQuestions().find((q) => q.id === currentRuleTriggerId);
-      if (q) {
-        options.push({ label: q.text, value: q.id });
-      }
+      const q = this.questionsMap().get(currentRuleTriggerId);
+      if (q) options.push({ label: q.text, value: q.id });
     }
     return options;
   }
 
   getQuestionTextById(id: number | null): string {
     if (!id) return '';
-    return this.allQuestions().find((q) => q.id === id)?.text || 'Question ' + id;
+    return this.questionsMap().get(id)?.text || 'Question ' + id;
   }
 
   setSurveyId(id: string | null) {
     this.activeSurveyId.set(id);
     this.selectedTreeNode.set(null);
     this.currentSubdomainQuestions.set([]);
-    this.rulesForms.set([]);
     this.allQuestions.set([]);
     this.domainTreeNodes.set([]);
     this.reviewDomainFilterId.set(null);
+    this.editingIds.set(new Set());
   }
 
-  saveRule(index: number) {
-    const rules = this.rulesForms();
-    const form = rules[index];
-
-    if (form.invalid) {
-      form.markAllAsTouched();
-      return;
-    }
-
-    const val = form.value;
-    const triggerQId = val.trigger_question_id;
-
-    let backendActionType = val.ui_action_type;
-    if (backendActionType === 'alert') {
-      backendActionType = val.alert_type;
-    }
-
-    const targetId = val.target_question_ids?.length ? val.target_question_ids[0] : undefined;
+  // Refactored: Takes data directly instead of relying on Signal array mutation
+  saveLogicRule(payloadData: any, id?: number, triggerQId?: number): Observable<any> {
     const payload = {
-      trigger_answer: val.trigger_answer,
-      action_type: backendActionType,
-      target_question_id: targetId,
-      target_question_ids: val.target_question_ids?.length ? val.target_question_ids : undefined,
-      target_answer_options: val.target_answer_options?.length
-        ? val.target_answer_options
-        : undefined,
+      trigger_answer: payloadData.trigger_answer,
+      action_type: payloadData.ui_action_type === 'alert' ? payloadData.alert_type : payloadData.ui_action_type,
+      target_question_id: payloadData.target_question_ids?.length ? payloadData.target_question_ids[0] : undefined,
+      target_question_ids: payloadData.target_question_ids?.length ? payloadData.target_question_ids : undefined,
+      target_answer_options: payloadData.target_answer_options?.length ? payloadData.target_answer_options : undefined,
     };
 
-    if (val.id) {
-      this.logicService.updateLogicRule(val.id, payload).subscribe({
-        next: () => {
-          form.patchValue({ isEditing: false });
-          form.disable();
-          this.rulesForms.set([...rules]);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Rule updated',
-          });
-          this.surveyResource?.reload();
-        },
-        error: () =>
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Could not update',
-          }),
-      });
+    if (id) {
+      return this.logicService.updateLogicRule(id, payload);
     } else {
-      this.logicService.createLogicRule(triggerQId, payload).subscribe({
-        next: (res) => {
-          form.patchValue({ id: res.data?.id || res.id, isEditing: false });
-          form.disable();
-          this.rulesForms.set([...rules]);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Rule created',
-          });
-          this.surveyResource?.reload();
-        },
-        error: () =>
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Could not create',
-          }),
-      });
+      return this.logicService.createLogicRule(triggerQId!, payload);
     }
   }
 
-  removeRule(index: number) {
-    const rules = this.rulesForms();
-    const ruleId = rules[index].get('id')?.value;
-
-    if (ruleId) {
-      this.logicService.deleteLogicRule(ruleId).subscribe({
-        next: () => {
-          rules.splice(index, 1);
-          if (rules.length === 0) rules.push(this.createRuleForm(null));
-          this.rulesForms.set([...rules]);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Rule deleted',
-          });
-          this.surveyResource?.reload();
-        },
-        error: () =>
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Could not delete',
-          }),
-      });
-    } else {
-      rules.splice(index, 1);
-      if (rules.length === 0) rules.push(this.createRuleForm(null));
-      this.rulesForms.set([...rules]);
-    }
+  deleteLogicRule(ruleId: number): Observable<any> {
+    return this.logicService.deleteLogicRule(ruleId);
   }
 }

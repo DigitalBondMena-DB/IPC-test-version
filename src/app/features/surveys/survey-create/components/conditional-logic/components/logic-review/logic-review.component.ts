@@ -1,4 +1,4 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormGroup, FormsModule } from '@angular/forms';
@@ -7,7 +7,6 @@ import { ConditionalLogicStateService } from '../../conditional-logic.state';
 import { BSelectComponent } from '@shared/components/b-select/b-select.component';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { BCheckboxComponent } from '@shared/components/b-checkbox/b-checkbox.component';
-import { SurveyLogicService } from '@features/surveys/services/survey-logic.service';
 import { MessageService, TreeNode } from 'primeng/api';
 import { TreeSelectModule } from 'primeng/treeselect';
 
@@ -34,11 +33,10 @@ import { TreeSelectModule } from 'primeng/treeselect';
     `,
   ],
 })
-export class LogicReviewComponent {
+export class LogicReviewComponent implements OnInit {
   readonly state = inject(ConditionalLogicStateService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly logicService = inject(SurveyLogicService);
   private readonly messageService = inject(MessageService);
 
   readonly EditIcon = Pencil;
@@ -48,14 +46,47 @@ export class LogicReviewComponent {
   readonly GitForkIcon = GitFork;
   readonly PlusIcon = Plus;
 
-  allLogicRules = this.state.allLogicRules;
-  reviewEditIndex = this.state.reviewEditIndex;
-  reviewEditForm = this.state.reviewEditForm;
-  actionOptions = this.state.actionOptions;
-  alertTypeOptions = this.state.alertTypeOptions;
-  domainTreeNodes = this.state.domainTreeNodes;
-  reviewDomainFilterId = this.state.reviewDomainFilterId;
-  selectedFilterNode = signal<TreeNode | null>(null);
+  // Signal for edit form reactivity in Zoneless
+  readonly editFormUpdateVersion = signal(0);
+
+  // Optimized Rule ViewModels for the list
+  readonly ruleListItems = computed(() => {
+    const rules = this.state.allLogicRules();
+    return rules.map((r, index) => ({
+      ...r,
+      index,
+      triggerLabel: r.triggerQuestion.text,
+      targetLabel: this.state.getQuestionTextById(r.rule.target_question_id || r.rule.target_question_ids?.[0])
+    }));
+  });
+
+  // Optimized Edit ViewModel
+  readonly editViewModel = computed(() => {
+    this.editFormUpdateVersion();
+    const form = this.state.reviewEditForm();
+    if (!form) return null;
+
+    const triggerId = form.get('trigger_question_id')?.value;
+    const targetId = form.get('target_question_ids')?.value?.[0];
+
+    return {
+      form,
+      triggerOptions: this.getReviewTriggerOptions(triggerId),
+      questionOptions: this.state.getQuestionOptions(triggerId),
+      targetOptions: this.getReviewTargetOptions(triggerId),
+      targetAnswerOptions: this.state.getQuestionOptions(targetId),
+      targetId
+    };
+  });
+
+  readonly allLogicRules = this.state.allLogicRules;
+  readonly reviewEditIndex = this.state.reviewEditIndex;
+  readonly reviewEditForm = this.state.reviewEditForm;
+  readonly actionOptions = this.state.actionOptions;
+  readonly alertTypeOptions = this.state.alertTypeOptions;
+  readonly domainTreeNodes = this.state.domainTreeNodes;
+  readonly reviewDomainFilterId = this.state.reviewDomainFilterId;
+  readonly selectedFilterNode = signal<TreeNode | null>(null);
 
   readonly surveysResource = this.state.surveysResource;
   readonly selectedSurveyId = this.state.activeSurveyId;
@@ -63,12 +94,9 @@ export class LogicReviewComponent {
   readonly surveyOptions = this.state.surveyOptions;
 
   ngOnInit() {
-    // Check for domain_id in query params to pre-filter
     const domainId = this.route.snapshot.queryParamMap.get('domain_id');
     if (domainId) {
       this.reviewDomainFilterId.set(`domain_${domainId}`);
-      // Find the node in tree to show as selected if needed
-      // (Optional UI polish)
     }
   }
 
@@ -93,6 +121,11 @@ export class LogicReviewComponent {
     const form = this.state.createRuleForm(ruleEntry.triggerQuestion.id, ruleEntry.rule);
     form.get('isEditing')?.setValue(true);
     form.enable();
+    
+    form.valueChanges.subscribe(() => {
+      this.editFormUpdateVersion.update(v => v + 1);
+    });
+
     this.reviewEditForm.set(form);
   }
 
@@ -104,19 +137,7 @@ export class LogicReviewComponent {
     }
 
     const val = form.getRawValue();
-    let backendActionType = val.ui_action_type;
-    if (backendActionType === 'alert') backendActionType = val.alert_type;
-
-    const targetId = val.target_question_ids?.length ? val.target_question_ids[0] : undefined;
-    const payload = {
-      trigger_answer: val.trigger_answer,
-      action_type: backendActionType,
-      target_question_id: targetId,
-      target_question_ids: val.target_question_ids,
-      target_answer_options: val.target_answer_options,
-    };
-
-    this.logicService.updateLogicRule(val.id, payload).subscribe({
+    this.state.saveLogicRule(val, val.id, val.trigger_question_id).subscribe({
       next: () => {
         this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Rule updated' });
         this.reviewEditIndex.set(null);
@@ -136,7 +157,7 @@ export class LogicReviewComponent {
     const rules = this.allLogicRules();
     const ruleId = rules[index]?.rule?.id;
     if (ruleId) {
-      this.logicService.deleteLogicRule(ruleId).subscribe({
+      this.state.deleteLogicRule(ruleId).subscribe({
         next: () => {
           this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Rule deleted' });
           this.state.surveyResource?.reload();
@@ -145,14 +166,7 @@ export class LogicReviewComponent {
     }
   }
 
-  getQuestionTextById(id: number | null) {
-    return this.state.getQuestionTextById(id);
-  }
-
-  getQuestionOptions(id: number | null) {
-    return this.state.getQuestionOptions(id);
-  }
-
+  // Pre-calculated options helpers
   getReviewTriggerOptions(currentId: number | null) {
     return this.state.allQuestions().map((q) => ({ label: q.text, value: q.id }));
   }

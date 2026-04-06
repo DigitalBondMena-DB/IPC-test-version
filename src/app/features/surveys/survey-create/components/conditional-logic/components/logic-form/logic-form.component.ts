@@ -1,7 +1,7 @@
-import { Component, inject, model, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { ReactiveFormsModule, FormGroup, FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormGroup, FormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule, Edit2, Trash2, Check, Plus } from 'lucide-angular';
 import { TreeSelectModule } from 'primeng/treeselect';
 import { RadioButtonModule } from 'primeng/radiobutton';
@@ -44,23 +44,67 @@ export class LogicFormComponent implements OnInit {
   readonly CheckIcon = Check;
   readonly PlusIcon = Plus;
 
-  domainTreeNodes = this.state.domainTreeNodes;
-  selectedTreeNode = this.state.selectedTreeNode;
-  rulesForms = this.state.rulesForms;
-  currentSubdomainQuestions = this.state.currentSubdomainQuestions;
-  actionOptions = this.state.actionOptions;
-  alertTypeOptions = this.state.alertTypeOptions;
-  isAnyRuleEditing = this.state.isAnyRuleEditing;
+  // Component-local FormGroups (UI State)
+  readonly rulesForms = signal<FormGroup[]>([]);
+  
+  // Track internal form changes for Signal-based UI updates in Zoneless mode
+  readonly formUpdateVersion = signal(0);
+  
+  // High-performance ViewModels for the template (calculated once per change)
+  readonly ruleViewModels = computed(() => {
+    this.formUpdateVersion(); // Dependency
+    const rules = this.rulesForms();
+    return rules.map((form, index) => {
+      const triggerId = form.get('trigger_question_id')?.value;
+      const targetId = form.get('target_question_ids')?.value?.[0];
+      
+      return {
+        form,
+        index,
+        id: form.get('id')?.value || `temp_${index}`,
+        isEditing: form.get('isEditing')?.value,
+        triggerOptions: this.state.getTriggerQuestionOptions(triggerId),
+        questionOptions: this.state.getQuestionOptions(triggerId),
+        targetQuestionOptions: this.getFilteredTargetOptions(triggerId),
+        targetAnswerOptions: this.state.getQuestionOptions(targetId),
+        targetId
+      };
+    });
+  });
 
+  // Expose signals from state service
+  readonly domainTreeNodes = this.state.domainTreeNodes;
+  readonly selectedTreeNode = this.state.selectedTreeNode;
+  readonly currentSubdomainQuestions = this.state.currentSubdomainQuestions;
+  readonly actionOptions = this.state.actionOptions;
+  readonly alertTypeOptions = this.state.alertTypeOptions;
+  readonly isAnyRuleEditing = this.state.isAnyRuleEditing;
   readonly standaloneMode = this.state.standaloneMode;
   readonly surveyOptions = this.state.surveyOptions;
   readonly surveysResource = this.state.surveysResource;
   readonly selectedSurveyId = this.state.activeSurveyId;
 
+  ngOnInit() {
+    if (this.rulesForms().length === 0) {
+      this.initEmptyForm();
+    }
+  }
+
+  private initEmptyForm() {
+    const form = this.state.createRuleForm(null);
+    this.setupFormSubscription(form);
+    this.rulesForms.set([form]);
+  }
+
+  private setupFormSubscription(form: FormGroup) {
+    form.valueChanges.subscribe(() => {
+      this.formUpdateVersion.update(v => v + 1);
+    });
+  }
+
   onSurveyChange(id: string) {
     this.state.setSurveyId(id);
-    // Re-initialize with one empty form after state reset
-    this.rulesForms.set([this.state.createRuleForm(null)]);
+    this.initEmptyForm();
   }
 
   onSurveySearch(search: string) {
@@ -71,13 +115,6 @@ export class LogicFormComponent implements OnInit {
   onSurveyScroll(event: any) {
     if (this.surveysResource.isLoading()) return;
     this.state.surveyPage.update((p) => p + 1);
-  }
-
-  ngOnInit() {
-    // If no rules are loaded, provide one empty form as initial state
-    if (this.rulesForms().length === 0) {
-      this.rulesForms.set([this.state.createRuleForm(null)]);
-    }
   }
 
   onNodeSelect(event: any) {
@@ -103,57 +140,127 @@ export class LogicFormComponent implements OnInit {
       }
     });
 
-    const existingRules: FormGroup[] = [];
-    ruleMap.forEach((entry) =>
-      existingRules.push(this.state.createRuleForm(entry.triggerId, entry.rule)),
-    );
-    if (existingRules.length === 0) existingRules.push(this.state.createRuleForm(null));
+    const existingRefForms: FormGroup[] = [];
+    ruleMap.forEach((entry) => {
+      const form = this.state.createRuleForm(entry.triggerId, entry.rule);
+      this.setupFormSubscription(form);
+      existingRefForms.push(form);
+    });
+    
+    if (existingRefForms.length === 0) {
+      const emptyForm = this.state.createRuleForm(null);
+      this.setupFormSubscription(emptyForm);
+      existingRefForms.push(emptyForm);
+    }
 
-    this.rulesForms.set(existingRules);
+    this.rulesForms.set(existingRefForms);
+    this.state.editingIds.set(new Set()); // Reset editing set when switching nodes
   }
 
   addRule() {
     const rules = this.rulesForms();
-    const pendingRules = rules.filter((f) => f.get('isEditing')?.value || f.dirty);
+    const hasInvalid = rules.some(f => f.invalid && (f.get('isEditing')?.value || f.dirty));
 
-    if (pendingRules.length > 0) {
-      const invalidForms = pendingRules.filter((f) => f.invalid);
-      if (invalidForms.length > 0) {
-        invalidForms.forEach((f) => f.markAllAsTouched());
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Complete current rule first.',
-        });
-        return;
-      }
-      // Save all then add
-      pendingRules.forEach((form, i) => {
-        this.state.saveRule(rules.indexOf(form));
+    if (hasInvalid) {
+      rules.forEach(f => f.invalid && f.markAllAsTouched());
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Validation',
+        detail: 'Please complete or correct the current rules first.',
       });
-      rules.push(this.state.createRuleForm(null));
-      this.rulesForms.set([...rules]);
-    } else {
-      rules.push(this.state.createRuleForm(null));
-      this.rulesForms.set([...rules]);
+      return;
     }
-  }
 
-  saveRule(index: number) {
-    this.state.saveRule(index);
+    const newForm = this.state.createRuleForm(null);
+    this.setupFormSubscription(newForm);
+    this.rulesForms.set([...rules, newForm]);
+    // Newly added form is inherently in "edit" mode by state service defaults
   }
 
   editRule(index: number) {
     const rules = this.rulesForms();
-    rules[index].patchValue({ isEditing: true });
-    rules[index].enable();
-    this.rulesForms.set([...rules]);
+    const form = rules[index];
+    const ruleId = form.get('id')?.value || `temp_${index}`;
+
+    form.patchValue({ isEditing: true });
+    form.enable();
+    
+    this.state.editingIds.update(set => {
+      const newSet = new Set(set);
+      newSet.add(ruleId);
+      return newSet;
+    });
+
+    this.rulesForms.set([...rules]); // UI Update for Zoneless
+  }
+
+  saveRule(index: number) {
+    const rules = this.rulesForms();
+    const form = rules[index];
+
+    if (form.invalid) {
+      form.markAllAsTouched();
+      return;
+    }
+
+    const val = form.getRawValue();
+    const ruleId = val.id;
+    const triggerQId = val.trigger_question_id;
+
+    this.state.saveLogicRule(val, ruleId, triggerQId).subscribe({
+      next: (res) => {
+        const savedId = res?.data?.id || res?.id || ruleId;
+        form.patchValue({ id: savedId, isEditing: false });
+        form.disable();
+        
+        // Remove from editingIds set
+        this.state.editingIds.update(set => {
+          const newSet = new Set(set);
+          newSet.delete(ruleId || `temp_${index}`);
+          newSet.delete(savedId);
+          return newSet;
+        });
+
+        this.rulesForms.set([...rules]);
+        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Rule saved' });
+        this.state.surveyResource.reload();
+      },
+      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to save rule' })
+    });
   }
 
   removeRule(index: number) {
-    this.state.removeRule(index);
+    const rules = [...this.rulesForms()];
+    const form = rules[index];
+    const ruleId = form.get('id')?.value;
+
+    const cleanup = () => {
+      rules.splice(index, 1);
+      if (rules.length === 0) rules.push(this.state.createRuleForm(null));
+      this.rulesForms.set(rules);
+      
+      this.state.editingIds.update(set => {
+        const newSet = new Set(set);
+        newSet.delete(ruleId || `temp_${index}`);
+        return newSet;
+      });
+    };
+
+    if (ruleId) {
+      this.state.deleteLogicRule(ruleId).subscribe({
+        next: () => {
+          cleanup();
+          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Rule deleted' });
+          this.state.surveyResource.reload();
+        },
+        error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete' })
+      });
+    } else {
+      cleanup();
+    }
   }
 
+  // Refactor: Options are now reactive via State Service Map lookups
   getTriggerQuestionOptions(triggerId: number | null) {
     return this.state.getTriggerQuestionOptions(triggerId);
   }

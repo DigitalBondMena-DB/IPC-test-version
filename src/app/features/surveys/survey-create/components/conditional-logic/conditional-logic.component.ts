@@ -23,7 +23,6 @@ export class ConditionalLogicComponent implements OnInit {
   readonly PlusIcon = Plus;
 
   constructor() {
-    // Traverse up to find 'id' parameter in any parent route (handles lazy loading nesting)
     let currentRoute: ActivatedRoute | null = this.route;
     let id: string | null = null;
     while (currentRoute && !id) {

@@ -50,8 +50,8 @@ export class EntityIdComponent {
   });
   isLoading = computed(() => (this.entityResource ? this.entityResource.isLoading() : false));
   private setParentIds(transformed: any, data: any): any {
-    const type = (data.type || this.config().entity_type)?.toUpperCase();
-    const parentType = (data.parent?.type || this.config().entity_type)?.toUpperCase();
+    const type = (data?.type || this.config()?.entity_type)?.toUpperCase();
+    const parentType = (data?.parent?.type || this.config()?.entity_type)?.toUpperCase();
     if (type === 'HOSPITAL' && parentType === 'AUTHORITY') {
       transformed.authority_id = data.parent_id;
     } else if (type === 'HOSPITAL') {

@@ -5,6 +5,10 @@ import { MessageService } from 'primeng/api';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
 
+// Throttle auth error notifications to prevent toast storms on parallel request failures
+let lastAuthErrorTime = 0;
+const AUTH_ERROR_THROTTLE_MS = 3000;
+
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const _MessageService = inject(MessageService);
   const _AuthService = inject(AuthService);
@@ -12,13 +16,27 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      // 1. Handle Unauthenticated (401)
-      if (error.status === 401 && !router.url.includes('login')) {
-        _MessageService.add({
-          severity: 'error',
-          summary: 'Unauthenticated',
-          detail: 'Your session has ended or you are unauthenticated. Please login again.',
-        });
+      const isLoginPath = router.url.includes('login');
+
+      // 1. Handle Unauthenticated (401) or Forbidden (403)
+      if ((error.status === 401 || error.status === 403) && !isLoginPath) {
+        const now = Date.now();
+        if (now - lastAuthErrorTime > AUTH_ERROR_THROTTLE_MS) {
+          lastAuthErrorTime = now;
+          
+          const summary = error.status === 401 ? 'Unauthenticated' : 'Forbidden';
+          const detail = error.status === 401 
+            ? 'Your session has ended. Please login again.' 
+            : 'You do not have permission to access this resource.';
+
+          _MessageService.add({
+            severity: 'error',
+            summary,
+            detail,
+            life: 5000
+          });
+        }
+        
         _AuthService.logout();
         return throwError(() => error);
       }
@@ -31,13 +49,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         errorMessage = error.error.message;
       } else {
         // Server-side error
-        // Some backends return { message: "..." } or { error: "..." }
         errorMessage =
           error.error?.message || error.error?.error || error.message || 'Server Internal Error';
       }
 
-      // 3. Display Global Toast Notification (except for 401 handled above)
-      if (error.status !== 401) {
+      // 3. Display Global Toast Notification (except for 401/403 handled above)
+      if (error.status !== 401 && error.status !== 403) {
         _MessageService.add({
           severity: 'error',
           summary: `Error ${error.status || ''}`,
