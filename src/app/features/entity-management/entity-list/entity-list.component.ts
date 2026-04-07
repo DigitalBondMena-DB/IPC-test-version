@@ -49,7 +49,9 @@ export class EntityListComponent {
   readonly type = toSignal(this.route.data.pipe(map((d) => d['type'] as string)), {
     initialValue: '',
   });
-  readonly config = computed(() => ENTITY_TYPE_CONFIG[this.type()]);
+  readonly config = computed(
+    () => ENTITY_TYPE_CONFIG[this.type()] || ENTITY_TYPE_CONFIG['NOT_FOUND'],
+  );
 
   tableState = signal({
     page: 1,
@@ -74,13 +76,15 @@ export class EntityListComponent {
   });
 
   resource = this._Service.getEntities(
-    this.config().endpoint,
-    this.config().entity_type,
+    () => this.config().endpoint,
+    () => this.config().entity_type,
     this.params,
-    this.config().parent_type,
+    () => this.config().parent_type,
   );
 
   tableData = computed(() => {
+    console.log(this.resource.value());
+
     if (this.resource.error()) return [];
     return this.resource.value()?.data ?? [];
   });

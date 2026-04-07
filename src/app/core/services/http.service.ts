@@ -15,7 +15,10 @@ export class HttpService {
   delete<T>(endpoint: string): Observable<T> {
     return this.http.delete<T>(API_CONFIG.BASE_URL + endpoint);
   }
-  get<T>(endpoint: string | (() => string), params?: Signal<any>): HttpResourceRef<T | undefined> {
+  get<T>(
+    endpoint: string | (() => string | undefined) | undefined,
+    params?: Signal<any>,
+  ): HttpResourceRef<T | undefined> {
     return httpResource<T>(() => {
       const currentParams = params ? params() : {};
       const actualEndpoint = typeof endpoint === 'function' ? endpoint() : endpoint;

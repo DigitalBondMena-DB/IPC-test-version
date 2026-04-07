@@ -19,6 +19,8 @@ import { TopBarBreadcrumbComponent } from '@/core/layout/main-layout/components/
 import { BNotificationComponent } from '../b-notification/b-notification.component';
 import { SideBarService } from '@/core/layout/main-layout/components/side-bar/services/side-bar.service';
 import { Avatar } from 'primeng/avatar';
+import { Role } from '@/shared/models/users-role.model';
+import { AuthService } from '@/core/services/auth.service';
 
 @Component({
   selector: 'app-b-page-header',
@@ -44,11 +46,16 @@ export class BPageHeaderComponent {
   // Inputs
   title = input.required<string>();
   placeholder = input<string>('Search for...');
-  createButtonLabel = input<string>('Create');
   showCreateButton = input<boolean>(true);
   showSearch = input<boolean>(false);
+  createButtonLabel = input<string>('Create');
   createButtonIcon = input<any>(Plus);
+  createButtonRoles = input<Role[]>([]);
   private readonly _SideBarService = inject(SideBarService);
+  private readonly _AuthService = inject(AuthService);
+  userRole = computed(() => {
+    return this._AuthService.role();
+  });
   userLogoResource = this._SideBarService.getIcon();
   userLogo = computed(() => {
     return this.userLogoResource.value();

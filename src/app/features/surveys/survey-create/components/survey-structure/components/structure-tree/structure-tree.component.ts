@@ -10,8 +10,10 @@ import {
   ChevronUp,
   LayoutGrid,
   Pencil,
+  Copy,
 } from 'lucide-angular';
 import { SurveyStructureStateService } from '../../survey-structure.state';
+import { BCheckboxComponent } from '@/shared/components/b-checkbox/b-checkbox.component';
 
 @Component({
   selector: 'app-structure-tree',
@@ -22,6 +24,7 @@ import { SurveyStructureStateService } from '../../survey-structure.state';
     FormsModule,
     LucideAngularModule,
     TooltipModule,
+    BCheckboxComponent,
   ],
   templateUrl: './structure-tree.component.html',
   styleUrl: '../../survey-structure.component.css'
@@ -36,6 +39,7 @@ export class StructureTreeComponent {
   readonly chevronUpIcon = ChevronUp;
   readonly domainIcon = LayoutGrid;
   readonly pencilIcon = Pencil;
+  readonly copyIcon = Copy;
 
   get domains() {
     return this.state.domains;
@@ -119,5 +123,9 @@ export class StructureTreeComponent {
       badge += `-${index + 1}`;
     }
     return badge;
+  }
+  onDuplicate(node: FormGroup, level: number, index: number) {
+    // Placeholder function for domain/subdomain duplication
+    console.log(`Duplicate requested for level ${level}, index ${index}`);
   }
 }

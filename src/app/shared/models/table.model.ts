@@ -7,6 +7,7 @@ export interface ITableColumn {
   duplicate?: boolean;
   viewOnly?: boolean;
   customClass?: string;
+  transform?: (value: any) => any;
 }
 
 export interface ITableParams {

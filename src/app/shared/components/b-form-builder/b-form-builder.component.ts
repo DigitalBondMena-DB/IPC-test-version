@@ -14,6 +14,9 @@ import { BInputComponent } from '../b-input/b-input.component';
 import { BSelectComponent } from '../b-select/b-select.component';
 import { BCheckboxComponent } from '../b-checkbox/b-checkbox.component';
 import { BMultiSelectComponent } from '../b-multi-select/b-multi-select.component';
+import { BImageUploadComponent } from '../b-image-upload/b-image-upload.component';
+import { AuthService } from '@/core/services/auth.service';
+import { computed } from '@angular/core';
 
 @Component({
   selector: 'app-b-form-builder',
@@ -25,6 +28,7 @@ import { BMultiSelectComponent } from '../b-multi-select/b-multi-select.componen
     BSelectComponent,
     BCheckboxComponent,
     BMultiSelectComponent,
+    BImageUploadComponent,
   ],
   templateUrl: './b-form-builder.component.html',
   styleUrl: './b-form-builder.component.css',
@@ -32,6 +36,16 @@ import { BMultiSelectComponent } from '../b-multi-select/b-multi-select.componen
 })
 export class BFormBuilderComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly _AuthService = inject(AuthService);
+
+  // Filter fields by role
+  filteredFields = computed(() => {
+    const role = this._AuthService.role();
+    return this.fields().filter((field) => {
+      if (!field.roles || field.roles.length === 0) return true;
+      return field.roles.includes(role);
+    });
+  });
 
   // Inputs
   fields = input.required<IFormField[]>();
@@ -52,6 +66,12 @@ export class BFormBuilderComponent implements OnInit {
 
   constructor() {
     effect(() => {
+      // Rebuild form whenever the filtered list of fields changes
+      this.filteredFields();
+      this.buildForm();
+    });
+
+    effect(() => {
       const data = this.initialData();
       if (this.form && data) {
         this.form.patchValue(data, { emitEvent: false });
@@ -59,19 +79,18 @@ export class BFormBuilderComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    this.buildForm();
-  }
+  ngOnInit(): void {}
 
   private buildForm(): void {
     const group: any = {};
     const data = this.initialData() || {};
 
-    this.fields().forEach((field) => {
+    this.filteredFields().forEach((field) => {
       group[field.key] = [data[field.key] || '', field.validators || []];
     });
-
-    this.form = this.fb.group(group, { validators: this.groupValidators() });
+    if (!this.form) {
+      this.form = this.fb.group(group, { validators: this.groupValidators() });
+    }
 
     // Listen for changes
     Object.keys(this.form.controls).forEach((key) => {

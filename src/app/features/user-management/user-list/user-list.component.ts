@@ -17,6 +17,7 @@ import { USER_TYPE_CONFIG } from '../config/user-type.config';
     <app-b-page-header
       [title]="config().title"
       [createButtonLabel]="'Create ' + config().entityLabel"
+      [createButtonRoles]="['ministry', 'authority']"
       (searchChange)="onSearch($event)"
       [showSearch]="true"
       (createClick)="onCreate()"

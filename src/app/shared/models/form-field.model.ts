@@ -1,8 +1,9 @@
+import { Role } from './users-role.model';
 export interface IFormField {
   key: string;
   label: string;
   subLable?: string;
-  type: 'text' | 'password' | 'email' | 'checkbox' | 'select' | 'multiselect' | 'number';
+  type: 'text' | 'password' | 'email' | 'checkbox' | 'select' | 'multiselect' | 'number' | 'image';
   placeholder?: string;
   options?: { label: string; value: any }[];
   validators?: any[];
@@ -12,4 +13,5 @@ export interface IFormField {
   loading?: boolean;
   dependsOn?: string;
   disabled?: boolean;
+  roles?: Role[];
 }

@@ -626,14 +626,16 @@
                 <button
                   (click)="onEditFromGradedReview(item)"
                   class="text-blue-400 hover:text-blue-500 rounded hover:bg-blue-50 transition-colors p-2.5 bg-[#EFF6FF]"
-                  title="Edit Question"
+                  pTooltip="Edit Question"
+                  tooltipPosition="top"
                 >
                   <lucide-angular [img]="pencilIcon" [size]="14" />
                 </button>
                 <button
                   (click)="onDeleteFromGradedReview(item)"
                   class="text-red-100 hover:text-red-500 bg-red-200 p-1 rounded hover:bg-red-50 transition-colors"
-                  title="Delete Question"
+                  pTooltip="Delete Question"
+                  tooltipPosition="top"
                 >
                   <lucide-angular [img]="trashIcon" [size]="16" />
                 </button>

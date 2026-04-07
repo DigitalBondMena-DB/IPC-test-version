@@ -7,21 +7,22 @@ export const API_CONFIG = {
     ENTITIES: {
       BASE: 'entities',
       TYPE: {
-        HEALTH_DIRECTORATE: 'governorate',
-        HEALTH_DIVISION: 'medical_area',
+        GOVERNORATES: 'governorate',
+        SECTORS: 'medical_area',
         HOSPITAL: 'hospital',
         AUTHORITY: 'authority',
+        FACILITIES: 'authority',
       },
     },
     USERS: {
       BASE: 'users',
       TYPE: {
         SUPER_ADMIN: 'ministry',
-        HEALTH_DIRECTORATE: 'governorate',
-        HEALTH_DIVISION: 'medical_area',
+        GOVERNORATES: 'governorate',
+        SECTORS: 'medical_area',
         HOSPITAL: 'hospital',
         AUTHORITY: 'authority',
-        AUTHORITY_HOSPITAL: 'authority_hospital',
+        FACILITIES: 'authority',
       },
     },
     SURVEYS: {

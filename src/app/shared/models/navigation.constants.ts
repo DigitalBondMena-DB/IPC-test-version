@@ -9,47 +9,35 @@ export const ALL_MENU_ITEMS: NavItem[] = [
   { label: 'User Management', icon: 'Dashboard', isSection: true },
   { label: 'Overview', routerLink: '/dashboard' },
   { label: 'Divisions', roles: ['ministry'], routerLink: '/dashboard/divisions' },
-  {
-    label: 'Entities',
-    expanded: false,
-    roles: ['ministry'],
-    children: [
-      { label: 'Health Directorate', routerLink: '/dashboard/health-directorate' },
-      { label: 'Health Division', routerLink: '/dashboard/health-division' },
-      { label: 'Hospitals', routerLink: '/dashboard/hospitals' },
-      { label: 'Authorities', routerLink: '/dashboard/authorities' },
-      { label: "Authority's Hospitals", routerLink: '/dashboard/authorities-hospitals' },
-    ],
-  },
+  { label: 'Governorates', roles: ['ministry'], routerLink: '/dashboard/governorates' },
+  { label: 'Sectors', roles: ['ministry'], routerLink: '/dashboard/sectors' },
+  { label: 'Authority', routerLink: '/dashboard/authorities' },
+  { label: 'Facilities', routerLink: '/dashboard/facilities' },
   {
     label: 'User Management',
     expanded: false,
     children: [
       { label: 'Super Admin', roles: ['ministry'], routerLink: '/dashboard/super-admin-users' },
       {
-        label: 'Health Directorate',
-        roles: ['ministry', 'governorate'],
-        routerLink: '/dashboard/health-directorate-users',
-      },
-      {
-        label: 'Health Division',
-        roles: ['ministry', 'governorate', 'medical_area'],
-        routerLink: '/dashboard/health-division-users',
-      },
-      {
-        label: 'Hospitals',
-        roles: ['ministry', 'governorate', 'medical_area', 'hospital'],
-        routerLink: '/dashboard/hospitals-users',
-      },
-      {
-        label: 'Authorities',
+        label: 'Authority',
         roles: ['ministry', 'authority', 'authority_hospital'],
         routerLink: '/dashboard/authorities-users',
       },
       {
-        label: "Authority's Hospitals",
+        label: 'Governorates',
+        roles: ['ministry', 'governorate'],
+        routerLink: '/dashboard/governorates-users',
+      },
+      {
+        label: 'Sectors',
+        roles: ['ministry', 'governorate', 'medical_area'],
+        routerLink: '/dashboard/sectors-users',
+      },
+
+      {
+        label: 'Facilities',
         roles: ['ministry', 'authority_hospital'],
-        routerLink: '/dashboard/authorities-hospitals-users',
+        routerLink: '/dashboard/facilities-users',
       },
     ],
   },

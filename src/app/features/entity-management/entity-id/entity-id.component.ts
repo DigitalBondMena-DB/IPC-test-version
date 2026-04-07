@@ -30,7 +30,9 @@ export class EntityIdComponent {
 
   readonly id = signal<string | null>(this.route.snapshot.paramMap.get('id'));
   readonly type = signal<string>(this.route.snapshot.data['type']);
-  readonly config = computed(() => ENTITY_TYPE_CONFIG[this.type()]);
+  readonly config = computed(
+    () => ENTITY_TYPE_CONFIG[this.type()] || ENTITY_TYPE_CONFIG['NOT_FOUND'],
+  );
   readonly isEdit = computed(() => !!this.id());
 
   readonly title = computed(
@@ -41,9 +43,11 @@ export class EntityIdComponent {
   readonly formValues = signal<Record<string, any>>({});
 
   // Entity data for editing
-  entityResource = this.isEdit()
-    ? this._Service.getEntityById(this.config().endpoint, this.config().entity_type, this.id()!)
-    : null;
+  entityResource = this._Service.getEntityById(
+    () => this.config().endpoint,
+    () => this.config().entity_type,
+    () => this.id(),
+  );
   entityData = computed(() => {
     const data = this.entityResource?.value();
     return this.transformEntityData(data);
@@ -59,7 +63,7 @@ export class EntityIdComponent {
       if (data.parent) {
         transformed.health_directorate_id = data.parent.parent_id;
       }
-    } else if (type === 'MEDICAL_AREA' || type === 'HEALTH_DIVISION') {
+    } else if (type === 'MEDICAL_AREA' || type === 'SECTORS') {
       transformed.health_directorate_id = data.parent_id;
     }
   }
@@ -108,7 +112,11 @@ export class EntityIdComponent {
 
       const params = computed(() => {
         const values = this.formValues();
+        console.log(deps);
+
         const fieldsConfig = this.config().formFields(deps);
+
+        if (!fieldsConfig) return null;
         const fieldDef = fieldsConfig.find((f: any) => f.key === depConfig.key);
 
         let parentId = null;
@@ -152,12 +160,12 @@ export class EntityIdComponent {
       directorates: {
         key: 'health_directorate_id',
         endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.HEALTH_DIRECTORATE,
+        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.GOVERNORATES,
       },
       healthDivisions: {
         key: 'health_division_id',
         endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.HEALTH_DIVISION,
+        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.SECTORS,
       },
       generalDivisions: { key: 'category_ids', endpoint: API_CONFIG.ENDPOINTS.CATEGORIES },
       authorities: {

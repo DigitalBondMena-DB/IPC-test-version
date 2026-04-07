@@ -9,37 +9,50 @@ import { Observable } from 'rxjs';
 })
 export class EntityManagementService extends HttpService {
   getEntities(
-    endpoint: string,
-    entityType: string | undefined,
+    endpoint: string | (() => string | undefined),
+    entityType: string | (() => string | undefined) | undefined,
     params: Signal<Record<string, string | number>>,
-    parentType?: string | undefined,
+    parentType?: string | (() => string | undefined) | undefined,
   ): HttpResourceRef<any | undefined> {
     const mergedParams = computed(() => {
       const p = { ...params() };
-      if (entityType) {
-        p['type'] = entityType;
+      const type = typeof entityType === 'function' ? entityType() : entityType;
+      const pType = typeof parentType === 'function' ? parentType() : parentType;
+
+      if (type) {
+        p['type'] = type;
       }
-      if (parentType) {
-        p['parent_type'] = parentType;
+      if (pType) {
+        p['parent_type'] = pType;
       }
       return p;
     });
+
     return this.get<any>(endpoint, mergedParams);
   }
 
   getEntityById(
-    endpoint: string,
-    entityType: string | undefined,
-    id: string,
+    endpoint: string | (() => string | undefined),
+    entityType: string | (() => string | undefined) | undefined,
+    id: string | (() => string | null | undefined),
   ): HttpResourceRef<any | undefined> {
     const params = computed(() => {
       const p: Record<string, string> = {};
-      if (entityType) {
-        p['type'] = entityType;
+      const type = typeof entityType === 'function' ? entityType() : entityType;
+      if (type) {
+        p['type'] = type;
       }
       return p;
     });
-    return this.get<any>(`${endpoint}/${id}`, params);
+
+    const fullEndpoint = () => {
+      const e = typeof endpoint === 'function' ? endpoint() : endpoint;
+      const i = typeof id === 'function' ? id() : id;
+      if (!e || !i) return undefined;
+      return `${e}/${i}`;
+    };
+
+    return this.get<any>(fullEndpoint, params);
   }
 
   createEntity(endpoint: string, entityType: string | undefined, data: any): Observable<any> {

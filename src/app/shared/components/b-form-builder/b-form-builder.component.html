@@ -1,6 +1,6 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-builder">
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6 items-center text-black-400">
-    @for (field of fields(); track field.key) {
+    @for (field of filteredFields(); track field.key) {
       <div [class]="field.colSpan || 'col-span-1'">
         @switch (field.type) {
           @case ('select') {
@@ -40,6 +40,16 @@
           @case ('checkbox') {
             <app-b-checkbox [id]="field.key" [label]="field.label" [formControlName]="field.key" />
           }
+          @case ('image') {
+            <app-b-image-upload
+              [id]="field.key"
+              [label]="field.label"
+              [subLable]="field.subLable || ''"
+              [formControlName]="field.key"
+              [hasError]="!!getErrorMessage(field)"
+              [errorMessage]="getErrorMessage(field)"
+            />
+          }
           @default {
             <app-b-input
               [id]="field.key"
@@ -58,7 +68,7 @@
     <div
       class="form-actions"
       [class]="
-        fields().length % 2 == 0 ? 'col-span-full justify-center mt-10' : 'col-span-1 justify-end'
+        filteredFields().length % 2 == 0 ? 'col-span-full justify-center mt-10' : 'col-span-1 justify-end'
       "
     >
       <button type="button" class="btn-cancel" (click)="onCancel()" [disabled]="loading()">

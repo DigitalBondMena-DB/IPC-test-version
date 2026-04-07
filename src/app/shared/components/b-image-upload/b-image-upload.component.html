@@ -1,0 +1,78 @@
+<div class="flex flex-col gap-2">
+  <app-b-lable [id]="id()" [label]="label()" [subLable]="subLable()" />
+
+  <div
+    class="relative w-full h-[200px] border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all duration-300 bg-white group overflow-hidden"
+    [class.border-red-500]="hasError() || error()"
+    [class.border-primary-100]="!hasError() && !error() && !disabled()"
+    [class.hover:border-primary-500]="!disabled()"
+    [class.opacity-50]="disabled()"
+    [class.cursor-not-allowed]="disabled()"
+    (click)="triggerUpload($event)"
+  >
+    <!-- Hidden File Input -->
+    <input
+      #fileInput
+      type="file"
+      [id]="id()"
+      class="hidden"
+      accept="image/*"
+      (change)="onFileSelected($event)"
+      [disabled]="disabled()"
+    />
+
+    @if (previewUrl()) {
+      <!-- Image Preview -->
+      <div class="absolute inset-0 p-2 overflow-hidden rounded-lg">
+        <img [src]="previewUrl()" alt="Preview" class="w-full h-full object-contain rounded-md" />
+
+        <!-- Hover Overlay with Actions -->
+        @if (!disabled()) {
+          <div
+            class="absolute inset-0 bg-black/10 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3"
+          >
+            <button
+              type="button"
+              class="flex items-center justify-center w-10 h-10 bg-white rounded-full text-red-500 shadow-lg hover:bg-red-50 transition-all hover:scale-110"
+              (click)="removeImage($event)"
+              pTooltip="Remove image"
+              tooltipPosition="top"
+            >
+              <lucide-angular [img]="icons.remove" size="20" />
+            </button>
+            <button
+              type="button"
+              class="flex items-center justify-center w-10 h-10 bg-white rounded-full text-primary-500 shadow-lg hover:bg-primary-50 transition-all hover:scale-110"
+              (click)="triggerUpload($event)"
+              pTooltip="Change image"
+              tooltipPosition="top"
+            >
+              <lucide-angular [img]="icons.upload" size="20" />
+            </button>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Empty State -->
+      <div
+        class="flex flex-col items-center gap-3 text-gray-500 transition-transform duration-300 group-hover:scale-105"
+      >
+        <div class="p-4 bg-primary-50/50 rounded-full text-primary-500">
+          <lucide-angular [img]="icons.image" size="36" />
+        </div>
+        <div class="text-center px-6">
+          <span class="font-semibold text-sm text-black-400 block mb-1">Click to upload image</span>
+          <span class="text-xs text-gray-400">Optimal size: max 2MB (PNG, JPG, SVG)</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Error Messages -->
+  @if (error() || (hasError() && errorMessage())) {
+    <div class="flex items-center gap-1.5 text-xs text-red-500 mt-1 animate-fadeIn">
+      <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+      {{ error() || errorMessage() }}
+    </div>
+  }
+</div>

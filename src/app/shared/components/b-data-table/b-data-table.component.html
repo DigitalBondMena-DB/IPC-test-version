@@ -58,7 +58,7 @@
                 @switch (col.type) {
                   @case ('date') {
                     <span [pTooltip]="row[col.field] ?? 'N/A'" tooltipPosition="top">
-                      {{ row[col.field] | date: 'MMM dd, yyyy' }}
+                      {{ getCellValue(row, col) | date: 'MMM dd, yyyy' }}
                     </span>
                   }
                   @case ('toggle') {
@@ -147,8 +147,8 @@
                   }
                   @default {
                     <p class="line-clamp-1">
-                      <span [pTooltip]="row[col.field] ?? 'N/A'" tooltipPosition="top">
-                        {{ row[col.field] ?? 'N/A' }}
+                      <span [pTooltip]="getCellValue(row, col)" tooltipPosition="top">
+                        {{ getCellValue(row, col) }}
                       </span>
                     </p>
                   }

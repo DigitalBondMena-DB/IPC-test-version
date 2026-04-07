@@ -89,13 +89,13 @@ export class UserIdComponent {
       transformed.health_directorate_id = data.entity.parent.parent_id;
       transformed.health_division_id = data.entity.parent_id;
       transformed.hospital_id = data.entity_id;
-    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.AUTHORITY_HOSPITAL) {
+    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.FACILITIES) {
       transformed.hospital_id = data.entity_id;
       transformed.authority_id = data.entity.parent_id;
-    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.HEALTH_DIVISION) {
+    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.SECTORS) {
       transformed.health_division_id = data.entity_id;
       transformed.health_directorate_id = data.entity.parent_id;
-    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.HEALTH_DIRECTORATE) {
+    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.GOVERNORATES) {
       transformed.health_directorate_id = data.entity_id;
     } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.AUTHORITY) {
       transformed.authority_id = data.entity_id;
@@ -185,12 +185,12 @@ export class UserIdComponent {
       directorates: {
         key: 'health_directorate_id',
         endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.HEALTH_DIRECTORATE,
+        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.GOVERNORATES,
       },
       healthDivisions: {
         key: 'health_division_id',
         endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.HEALTH_DIVISION,
+        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.SECTORS,
       },
       hospitals: {
         key: 'hospital_id',

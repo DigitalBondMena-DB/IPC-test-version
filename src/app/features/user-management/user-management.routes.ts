@@ -25,67 +25,45 @@ export default [
   },
   // Health Directorate
   {
-    path: 'health-directorate-users',
+    path: 'governorates-users',
     children: [
       {
         path: '',
         loadComponent: () =>
           import('./user-list/user-list.component').then((m) => m.UserListComponent),
-        data: { type: 'HEALTH_DIRECTORATE' },
+        data: { type: 'GOVERNORATES' },
       },
       {
         path: 'create',
         loadComponent: () => import('./user-id/user-id.component').then((m) => m.UserIdComponent),
-        data: { type: 'HEALTH_DIRECTORATE' },
+        data: { type: 'GOVERNORATES' },
       },
       {
         path: 'edit/:id',
         loadComponent: () => import('./user-id/user-id.component').then((m) => m.UserIdComponent),
-        data: { type: 'HEALTH_DIRECTORATE' },
+        data: { type: 'GOVERNORATES' },
       },
     ],
   },
   // Health Division
   {
-    path: 'health-division-users',
+    path: 'sectors-users',
     children: [
       {
         path: '',
         loadComponent: () =>
           import('./user-list/user-list.component').then((m) => m.UserListComponent),
-        data: { type: 'HEALTH_DIVISION' },
+        data: { type: 'SECTORS' },
       },
       {
         path: 'create',
         loadComponent: () => import('./user-id/user-id.component').then((m) => m.UserIdComponent),
-        data: { type: 'HEALTH_DIVISION' },
+        data: { type: 'SECTORS' },
       },
       {
         path: 'edit/:id',
         loadComponent: () => import('./user-id/user-id.component').then((m) => m.UserIdComponent),
-        data: { type: 'HEALTH_DIVISION' },
-      },
-    ],
-  },
-  // Hospitals
-  {
-    path: 'hospitals-users',
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./user-list/user-list.component').then((m) => m.UserListComponent),
-        data: { type: 'HOSPITAL' },
-      },
-      {
-        path: 'create',
-        loadComponent: () => import('./user-id/user-id.component').then((m) => m.UserIdComponent),
-        data: { type: 'HOSPITAL' },
-      },
-      {
-        path: 'edit/:id',
-        loadComponent: () => import('./user-id/user-id.component').then((m) => m.UserIdComponent),
-        data: { type: 'HOSPITAL' },
+        data: { type: 'SECTORS' },
       },
     ],
   },
@@ -113,23 +91,23 @@ export default [
   },
   // Authority Hospitals
   {
-    path: 'authorities-hospitals-users',
+    path: 'facilities-users',
     children: [
       {
         path: '',
         loadComponent: () =>
           import('./user-list/user-list.component').then((m) => m.UserListComponent),
-        data: { type: 'AUTHORITY_HOSPITAL' },
+        data: { type: 'FACILITIES' },
       },
       {
         path: 'create',
         loadComponent: () => import('./user-id/user-id.component').then((m) => m.UserIdComponent),
-        data: { type: 'AUTHORITY_HOSPITAL' },
+        data: { type: 'FACILITIES' },
       },
       {
         path: 'edit/:id',
         loadComponent: () => import('./user-id/user-id.component').then((m) => m.UserIdComponent),
-        data: { type: 'AUTHORITY_HOSPITAL' },
+        data: { type: 'FACILITIES' },
       },
     ],
   },

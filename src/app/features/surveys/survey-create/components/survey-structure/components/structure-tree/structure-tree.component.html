@@ -124,6 +124,13 @@
               {{ createBadge(level, $index, pathIds) }}
             </div>
 
+            <app-b-checkbox
+              [formControl]="domainNode.get('is_na')"
+              label="N/A"
+              class="scale-75 -mt-3.5"
+              (change)="syncDomains()"
+            />
+
             <input
               [formControl]="domainNode.get('title')"
               (blur)="onNodeBlur(domainNode)"
@@ -172,8 +179,19 @@
             </div>
 
             <button
+              (click)="onDuplicate(domainNode, level, $index)"
+              class="p-2 text-blue-400 hover:bg-blue-50 rounded-lg transition-colors"
+              pTooltip="Duplicate"
+              tooltipPosition="top"
+            >
+              <lucide-angular [img]="copyIcon" [size]="18" />
+            </button>
+
+            <button
               (click)="level === 0 ? removeDomain($index) : removeSubdomain(domainsArr.parent, $index)"
               class="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+              pTooltip="Delete"
+              tooltipPosition="top"
             >
               <lucide-angular [img]="trashIcon" [size]="18" />
             </button>

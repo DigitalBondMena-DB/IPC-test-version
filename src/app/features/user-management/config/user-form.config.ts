@@ -60,7 +60,6 @@ export const getUserFormConfig = (
           key: 'category_ids',
           label: 'Division',
           type: 'multiselect',
-          subLable: '(All Selected by Default)',
           placeholder: 'Select Divisions',
           options: deps.generalDivisions || [],
           validators: [],
@@ -72,25 +71,24 @@ export const getUserFormConfig = (
       ];
       break;
 
-    case 'governorate': // HEALTH_DIRECTORATE
+    case 'governorate':
       roleFields = [
         {
           key: 'health_directorate_id',
-          label: 'Health Directorate',
-          type: 'select',
-          placeholder: 'Select Health Directorate',
-          options: deps.directorates || [],
-          validators: [Validators.required],
+          label: 'Governorate',
+          type: 'multiselect',
+          placeholder: 'Select Governorate',
+          options: deps.generalDivisions || [],
+          validators: [],
           colSpan: 'col-span-1',
           filter: true,
           virtualScroll: true,
-          loading: deps.isDirectoratesLoading,
+          loading: deps.isGeneralDivisionsLoading,
         },
         {
           key: 'category_ids',
           label: 'Division',
           type: 'multiselect',
-          subLable: '(All Selected by Default)',
           placeholder: 'Select Divisions',
           options: deps.generalDivisions || [],
           validators: [],
@@ -99,16 +97,28 @@ export const getUserFormConfig = (
           virtualScroll: true,
           loading: deps.isGeneralDivisionsLoading,
         },
+        {
+          key: 'authority_id',
+          label: 'Authority',
+          type: 'select',
+          placeholder: 'Select Authority',
+          options: deps.authorities || [],
+          validators: [Validators.required],
+          colSpan: 'col-span-1',
+          roles: ['ministry'],
+          filter: true,
+          virtualScroll: true,
+          loading: deps.isAuthoritiesLoading,
+        },
       ];
       break;
 
-    case 'medical_area': // HEALTH_DIVISION
+    case 'medical_area':
       roleFields = [
         {
           key: 'category_ids',
           label: 'Division',
           type: 'multiselect',
-          subLable: '(All Selected by Default)',
           placeholder: 'Select Divisions',
           options: deps.generalDivisions || [],
           validators: [],
@@ -210,22 +220,9 @@ export const getUserFormConfig = (
     case 'authority': // AUTHORITY
       roleFields = [
         {
-          key: 'authority_id',
-          label: 'Authority',
-          type: 'select',
-          placeholder: 'Select Authority',
-          options: deps.authorities || [],
-          validators: [Validators.required],
-          colSpan: 'col-span-1',
-          filter: true,
-          virtualScroll: true,
-          loading: deps.isAuthoritiesLoading,
-        },
-        {
           key: 'category_ids',
           label: 'Division',
           type: 'multiselect',
-          subLable: '(All Selected by Default)',
           placeholder: 'Select Divisions',
           options: deps.generalDivisions || [],
           validators: [],
@@ -234,11 +231,6 @@ export const getUserFormConfig = (
           virtualScroll: true,
           loading: deps.isGeneralDivisionsLoading,
         },
-      ];
-      break;
-
-    case 'authority_hospital':
-      roleFields = [
         {
           key: 'authority_id',
           label: 'Authority',
@@ -247,15 +239,21 @@ export const getUserFormConfig = (
           options: deps.authorities || [],
           validators: [Validators.required],
           colSpan: 'col-span-1',
+          roles: ['ministry'],
           filter: true,
           virtualScroll: true,
           loading: deps.isAuthoritiesLoading,
         },
+      ];
+      break;
+
+    case 'facility':
+      roleFields = [
         {
           key: 'hospital_id',
-          label: 'Hospital',
+          label: 'Sector',
           type: 'select',
-          placeholder: 'Select Hospital',
+          placeholder: 'Select Sector',
           options: deps.hospitals || [],
           validators: [Validators.required],
           colSpan: 'col-span-1',
@@ -263,6 +261,31 @@ export const getUserFormConfig = (
           virtualScroll: true,
           loading: deps.isHospitalsLoading,
           dependsOn: 'authority_id',
+        },
+        {
+          key: 'authority_id',
+          label: 'Authority',
+          type: 'select',
+          placeholder: 'Select Authority',
+          options: deps.authorities || [],
+          validators: [Validators.required],
+          colSpan: 'col-span-1',
+          roles: ['ministry'],
+          filter: true,
+          virtualScroll: true,
+          loading: deps.isAuthoritiesLoading,
+        },
+        {
+          key: 'health_directorate_id',
+          label: 'Governorate',
+          type: 'multiselect',
+          placeholder: 'Select Governorate',
+          options: deps.generalDivisions || [],
+          validators: [],
+          colSpan: 'col-span-1',
+          filter: true,
+          virtualScroll: true,
+          loading: deps.isGeneralDivisionsLoading,
         },
         {
           key: 'category_ids',

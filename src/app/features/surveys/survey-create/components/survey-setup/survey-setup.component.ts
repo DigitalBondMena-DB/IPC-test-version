@@ -80,7 +80,7 @@ export class SurveySetupComponent implements OnInit {
     },
     {
       key: 'category_ids',
-      label: 'Survey Division (All Selected by Default)',
+      label: 'Survey Division',
       type: 'multiselect',
       placeholder: 'Select Divisions',
       options: this.categories().map((c) => ({ label: c.name, value: c.id })),
@@ -104,6 +104,7 @@ export class SurveySetupComponent implements OnInit {
       options: [
         { label: 'Weighted', value: 'manual' },
         { label: 'Non-Weighted', value: 'question_count' },
+        { label: 'Non-graded', value: 'question_count' },
       ],
       validators: [Validators.required],
       colSpan: 'col-span-1',

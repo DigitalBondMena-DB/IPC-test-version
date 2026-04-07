@@ -27,6 +27,21 @@ export class SurveysListComponent {
   columns: ITableColumn[] = [
     { field: 'name', header: 'Name', sortable: true },
     { field: 'division', header: 'Division', sortable: true },
+    {
+      field: 'weighting_type',
+      header: 'Calculation Method',
+      sortable: true,
+      transform: (value: string) => {
+        switch (value) {
+          case 'manual':
+            return 'Weighted';
+          case 'question_count':
+            return 'Non-Weighted';
+          default:
+            return value;
+        }
+      },
+    },
     { field: 'created', header: 'Created', type: 'date', sortable: true },
     { field: 'last_update', header: 'Last Update', type: 'date', sortable: true },
     { field: 'updated_by', header: 'Updated By', sortable: true },

@@ -179,4 +179,12 @@ export class BDataTableComponent {
       return item?.can_be_edited === false;
     }
   }
+
+  getCellValue(row: any, col: ITableColumn): any {
+    const value = row[col.field];
+    if (col.transform) {
+      return col.transform(value);
+    }
+    return value ?? 'N/A';
+  }
 }

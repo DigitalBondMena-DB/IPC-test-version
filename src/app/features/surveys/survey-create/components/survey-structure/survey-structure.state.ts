@@ -136,6 +136,7 @@ export class SurveyStructureStateService {
       weight: [data.weight || 1],
       isExpanded: [data.isExpanded !== undefined ? data.isExpanded : true],
       lastTitle: [data.lastTitle !== undefined ? data.lastTitle : titleValue],
+      is_na: [data.is_na || false],
       questions: this.fb.array((data.questions || []).map((q: any) => this.fb.group(q))),
       sub_domains: this.fb.array(
         (data.sub_domains || []).map((sd: any) => this.createDomainFormGroup(sd)),
@@ -222,6 +223,7 @@ export class SurveyStructureStateService {
         id: node.get('id')?.value || undefined,
         title: node.get('title')?.value,
         weight: node.get('weight')?.value || 0,
+        is_na: node.get('is_na')?.value || false,
         order: i + 1,
         questions: this.getQuestions(node).controls.map((q: any, qi: number) => ({
           text: q.get('text')?.value,

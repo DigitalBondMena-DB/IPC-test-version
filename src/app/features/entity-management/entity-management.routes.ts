@@ -31,7 +31,7 @@ export default [
     ],
   },
   {
-    path: 'health-directorate',
+    path: 'governorates',
     children: [
       {
         path: '',
@@ -39,7 +39,7 @@ export default [
           import('@features/entity-management/entity-list/entity-list.component').then(
             (m) => m.EntityListComponent,
           ),
-        data: { type: 'HEALTH_DIRECTORATE' },
+        data: { type: 'GOVERNORATES' },
       },
       {
         path: 'create',
@@ -47,7 +47,7 @@ export default [
           import('@features/entity-management/entity-id/entity-id.component').then(
             (m) => m.EntityIdComponent,
           ),
-        data: { type: 'HEALTH_DIRECTORATE' },
+        data: { type: 'GOVERNORATES' },
       },
       {
         path: 'edit/:id',
@@ -55,12 +55,12 @@ export default [
           import('@features/entity-management/entity-id/entity-id.component').then(
             (m) => m.EntityIdComponent,
           ),
-        data: { type: 'HEALTH_DIRECTORATE' },
+        data: { type: 'GOVERNORATES' },
       },
     ],
   },
   {
-    path: 'health-division',
+    path: 'sectors',
     children: [
       {
         path: '',
@@ -68,7 +68,7 @@ export default [
           import('@features/entity-management/entity-list/entity-list.component').then(
             (m) => m.EntityListComponent,
           ),
-        data: { type: 'HEALTH_DIVISION' },
+        data: { type: 'SECTORS' },
       },
       {
         path: 'create',
@@ -76,7 +76,7 @@ export default [
           import('@features/entity-management/entity-id/entity-id.component').then(
             (m) => m.EntityIdComponent,
           ),
-        data: { type: 'HEALTH_DIVISION' },
+        data: { type: 'SECTORS' },
       },
       {
         path: 'edit/:id',
@@ -84,36 +84,7 @@ export default [
           import('@features/entity-management/entity-id/entity-id.component').then(
             (m) => m.EntityIdComponent,
           ),
-        data: { type: 'HEALTH_DIVISION' },
-      },
-    ],
-  },
-  {
-    path: 'hospitals',
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('@features/entity-management/entity-list/entity-list.component').then(
-            (m) => m.EntityListComponent,
-          ),
-        data: { type: 'HOSPITAL' },
-      },
-      {
-        path: 'create',
-        loadComponent: () =>
-          import('@features/entity-management/entity-id/entity-id.component').then(
-            (m) => m.EntityIdComponent,
-          ),
-        data: { type: 'HOSPITAL' },
-      },
-      {
-        path: 'edit/:id',
-        loadComponent: () =>
-          import('@features/entity-management/entity-id/entity-id.component').then(
-            (m) => m.EntityIdComponent,
-          ),
-        data: { type: 'HOSPITAL' },
+        data: { type: 'SECTORS' },
       },
     ],
   },
@@ -147,7 +118,7 @@ export default [
     ],
   },
   {
-    path: 'authorities-hospitals',
+    path: 'facilities',
     children: [
       {
         path: '',
@@ -155,7 +126,7 @@ export default [
           import('@features/entity-management/entity-list/entity-list.component').then(
             (m) => m.EntityListComponent,
           ),
-        data: { type: 'AUTHORITY_HOSPITAL' },
+        data: { type: 'FACILITIES' },
       },
       {
         path: 'create',
@@ -163,7 +134,7 @@ export default [
           import('@features/entity-management/entity-id/entity-id.component').then(
             (m) => m.EntityIdComponent,
           ),
-        data: { type: 'AUTHORITY_HOSPITAL' },
+        data: { type: 'FACILITIES' },
       },
       {
         path: 'edit/:id',
@@ -171,7 +142,7 @@ export default [
           import('@features/entity-management/entity-id/entity-id.component').then(
             (m) => m.EntityIdComponent,
           ),
-        data: { type: 'AUTHORITY_HOSPITAL' },
+        data: { type: 'FACILITIES' },
       },
     ],
   },
