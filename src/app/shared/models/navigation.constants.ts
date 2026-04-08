@@ -8,52 +8,52 @@ export interface SidebarFooterConfig {
 export const ALL_MENU_ITEMS: NavItem[] = [
   { label: 'User Management', icon: 'Dashboard', isSection: true },
   { label: 'Overview', routerLink: '/dashboard' },
-  { label: 'Divisions', roles: ['ministry'], routerLink: '/dashboard/divisions' },
-  { label: 'Governorates', roles: ['ministry'], routerLink: '/dashboard/governorates' },
-  { label: 'Sectors', roles: ['ministry'], routerLink: '/dashboard/sectors' },
+  { label: 'Divisions', roles: ['super_admin'], routerLink: '/dashboard/divisions' },
+  { label: 'Governorates', roles: ['super_admin'], routerLink: '/dashboard/governorates' },
+  { label: 'Sectors', roles: ['super_admin'], routerLink: '/dashboard/sectors' },
   { label: 'Authority', routerLink: '/dashboard/authorities' },
   { label: 'Facilities', routerLink: '/dashboard/facilities' },
   {
     label: 'User Management',
     expanded: false,
     children: [
-      { label: 'Super Admin', roles: ['ministry'], routerLink: '/dashboard/super-admin-users' },
+      { label: 'Super Admin', roles: ['super_admin'], routerLink: '/dashboard/super-admin-users' },
       {
         label: 'Authority',
-        roles: ['ministry', 'authority', 'authority_hospital'],
+        roles: ['super_admin', 'authority', 'authority'],
         routerLink: '/dashboard/authorities-users',
       },
       {
         label: 'Governorates',
-        roles: ['ministry', 'governorate'],
+        roles: ['super_admin', 'governorate'],
         routerLink: '/dashboard/governorates-users',
       },
       {
         label: 'Sectors',
-        roles: ['ministry', 'governorate', 'medical_area'],
+        roles: ['super_admin', 'governorate'],
         routerLink: '/dashboard/sectors-users',
       },
 
       {
         label: 'Facilities',
-        roles: ['ministry', 'authority_hospital'],
+        roles: ['super_admin', 'authority'],
         routerLink: '/dashboard/facilities-users',
       },
     ],
   },
 
-  { label: 'Survey Builder', roles: ['ministry'], icon: 'Survey', isSection: true },
+  { label: 'Survey Builder', roles: ['super_admin'], icon: 'Survey', isSection: true },
   {
     label: 'New Survey',
-    roles: ['ministry'],
+    roles: ['super_admin'],
     icon: 'Plus',
     routerLink: '/survey/create/setup',
     isButton: true,
   },
-  { label: 'Surveys', roles: ['ministry'], routerLink: '/survey' },
+  { label: 'Surveys', roles: ['super_admin'], routerLink: '/survey' },
   {
     label: 'Conditional logic',
-    roles: ['ministry'],
+    roles: ['super_admin'],
     routerLink: '/survey/conditional-logic/review',
   },
 

@@ -204,7 +204,7 @@ export class UserIdComponent {
       },
       generalDivisions: {
         key: 'category_ids',
-        endpoint: API_CONFIG.ENDPOINTS.CATEGORIES,
+        endpoint: API_CONFIG.ENDPOINTS.DIVISIONS,
       },
     };
     return mapping[dep];

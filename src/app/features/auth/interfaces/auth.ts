@@ -1,3 +1,5 @@
+import { Role } from '@/shared/models/users-role.model';
+
 export interface ILoginData {
   identity: string;
   password: string;
@@ -12,4 +14,6 @@ export interface IUser {
   name: string;
   email: string;
   entity_type: string;
+  is_supervisor: boolean;
+  role: Role;
 }

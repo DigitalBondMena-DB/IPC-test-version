@@ -43,6 +43,6 @@ export class SurveyService extends HttpService {
   }
 
   getCategories(): Observable<any> {
-    return this.http.get<any>(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.CATEGORIES}`);
+    return this.http.get<any>(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DIVISIONS}`);
   }
 }

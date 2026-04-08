@@ -1,9 +1,13 @@
 export const API_CONFIG = {
-  BASE_URL: 'https://ipc.mshmohm.com/api/admin/',
+  BASE_URL: 'https://ipc-v2.mshmohm.com/api/admin/',
   ENDPOINTS: {
     LOGIN: 'login',
     HOME: 'home',
-    CATEGORIES: 'categories',
+    DIVISIONS: 'divisions',
+    GOVERNORATES: 'governorates',
+    SECTORS: 'sectors',
+    AUTHORITIES: 'authorities',
+    FACILITIES: 'facilitys',
     ENTITIES: {
       BASE: 'entities',
       TYPE: {
@@ -17,12 +21,12 @@ export const API_CONFIG = {
     USERS: {
       BASE: 'users',
       TYPE: {
-        SUPER_ADMIN: 'ministry',
+        SUPER_ADMIN: 'super_admin',
         GOVERNORATES: 'governorate',
-        SECTORS: 'medical_area',
+        SECTORS: 'sector',
         HOSPITAL: 'hospital',
         AUTHORITY: 'authority',
-        FACILITIES: 'authority',
+        FACILITIES: 'facility',
       },
     },
     SURVEYS: {

@@ -54,7 +54,7 @@ export const getUserFormConfig = (
   let roleFields: IFormField[] = [];
 
   switch (userType) {
-    case 'ministry': // SUPER_ADMIN
+    case 'super_admin': // SUPER_ADMIN
       roleFields = [
         {
           key: 'category_ids',
@@ -105,7 +105,7 @@ export const getUserFormConfig = (
           options: deps.authorities || [],
           validators: [Validators.required],
           colSpan: 'col-span-1',
-          roles: ['ministry'],
+          roles: ['super_admin'],
           filter: true,
           virtualScroll: true,
           loading: deps.isAuthoritiesLoading,
@@ -239,7 +239,7 @@ export const getUserFormConfig = (
           options: deps.authorities || [],
           validators: [Validators.required],
           colSpan: 'col-span-1',
-          roles: ['ministry'],
+          roles: ['super_admin'],
           filter: true,
           virtualScroll: true,
           loading: deps.isAuthoritiesLoading,
@@ -270,7 +270,7 @@ export const getUserFormConfig = (
           options: deps.authorities || [],
           validators: [Validators.required],
           colSpan: 'col-span-1',
-          roles: ['ministry'],
+          roles: ['super_admin'],
           filter: true,
           virtualScroll: true,
           loading: deps.isAuthoritiesLoading,

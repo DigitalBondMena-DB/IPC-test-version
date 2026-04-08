@@ -27,10 +27,15 @@ export class UserManagementService extends HttpService {
     userType: string,
     params: Signal<Record<string, string | number>>,
   ): HttpResourceRef<any | undefined> {
-    const mergedParams = computed(() => ({
-      ...params(),
-      entity_type: userType,
-    }));
+    const mergedParams = computed(() => {
+      let mergedParams: any = {};
+      if (userType === API_CONFIG.ENDPOINTS.USERS.TYPE.SUPER_ADMIN) {
+        mergedParams = { ...params(), is_super_admin: true };
+      } else {
+        mergedParams = { ...params(), entity_type: userType };
+      }
+      return mergedParams;
+    });
     return this.get<any>(endpoint, mergedParams);
   }
 
@@ -55,9 +60,7 @@ export class UserManagementService extends HttpService {
     });
   }
 
-  toggleUser(endpoint: string, userType: string, id: string): Observable<any> {
-    return this.post<any>(`${endpoint}/${id}/toggle`, {
-      type: userType,
-    });
+  toggleUser(endpoint: string, id: string): Observable<any> {
+    return this.post<any>(`${endpoint}/${id}/toggle`, {});
   }
 }

@@ -5,7 +5,7 @@ export const ENTITY_TYPE_CONFIG: Record<string, any> = {
   DIVISION: {
     title: 'Divisions',
     entityLabel: 'Division',
-    endpoint: API_CONFIG.ENDPOINTS.CATEGORIES,
+    endpoint: API_CONFIG.ENDPOINTS.DIVISIONS,
     navPath: '/dashboard/divisions',
     columns: [
       { field: 'name', header: 'Name', sortable: true },
@@ -23,13 +23,13 @@ export const ENTITY_TYPE_CONFIG: Record<string, any> = {
         colSpan: 'col-span-1',
       },
       {
-        key: 'authority_id',
+        key: 'authority_ids',
         label: 'Authority Name',
-        type: 'select',
+        type: 'multiselect',
         placeholder: 'Select authority name...',
         options: deps.authorities || [],
         validators: [Validators.required],
-        roles: ['ministry'],
+        roles: ['super_admin'],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
@@ -40,8 +40,7 @@ export const ENTITY_TYPE_CONFIG: Record<string, any> = {
   GOVERNORATES: {
     title: 'Governorates',
     entityLabel: 'Governorate',
-    endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-    entity_type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.GOVERNORATES,
+    endpoint: API_CONFIG.ENDPOINTS.GOVERNORATES,
     navPath: '/dashboard/governorates',
     columns: [
       { field: 'name', header: 'Name', sortable: true },
@@ -59,13 +58,13 @@ export const ENTITY_TYPE_CONFIG: Record<string, any> = {
         colSpan: 'col-span-1',
       },
       {
-        key: 'authority_id',
+        key: 'authority_ids',
         label: 'Authority Name',
-        type: 'select',
+        type: 'multiselect',
         placeholder: 'Select authority name...',
         options: deps.authorities || [],
         validators: [Validators.required],
-        roles: ['ministry'],
+        roles: ['super_admin'],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
@@ -76,12 +75,11 @@ export const ENTITY_TYPE_CONFIG: Record<string, any> = {
   SECTORS: {
     title: 'Sectors',
     entityLabel: 'Sector',
-    endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-    entity_type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.SECTORS,
+    endpoint: API_CONFIG.ENDPOINTS.SECTORS,
     navPath: '/dashboard/sectors',
     columns: [
       { field: 'name', header: 'Name', sortable: true },
-      { field: 'directorate', header: 'Directorate', sortable: true, type: 'text' },
+      { field: 'governorates', header: 'Governorate', sortable: true, type: 'text' },
       { field: 'updated_at', header: 'Last Update', sortable: true, type: 'date' },
       { field: 'updated_by', header: 'Updated By', sortable: true },
       { field: 'is_active', header: 'Actions', type: 'toggle', customClass: 'justify-end' },
@@ -96,7 +94,7 @@ export const ENTITY_TYPE_CONFIG: Record<string, any> = {
         colSpan: 'col-span-1',
       },
       {
-        key: 'health_directorate_id',
+        key: 'governorate',
         label: 'Governorate',
         type: 'multiselect',
         placeholder: 'Select Governorate...',
@@ -114,7 +112,7 @@ export const ENTITY_TYPE_CONFIG: Record<string, any> = {
         placeholder: 'Select authority name...',
         options: deps.authorities || [],
         validators: [Validators.required],
-        roles: ['ministry'],
+        roles: ['super_admin'],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
@@ -125,8 +123,7 @@ export const ENTITY_TYPE_CONFIG: Record<string, any> = {
   AUTHORITY: {
     title: 'Authorities',
     entityLabel: 'Authority',
-    endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-    entity_type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.AUTHORITY,
+    endpoint: API_CONFIG.ENDPOINTS.AUTHORITIES,
     navPath: '/dashboard/authorities',
     columns: [
       { field: 'name', header: 'Name', sortable: true },
@@ -154,9 +151,7 @@ export const ENTITY_TYPE_CONFIG: Record<string, any> = {
   FACILITIES: {
     title: 'Facilities',
     entityLabel: 'Facility',
-    endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-    entity_type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.FACILITIES,
-    parent_type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.AUTHORITY,
+    endpoint: API_CONFIG.ENDPOINTS.FACILITIES,
     navPath: '/dashboard/facilities',
     columns: [
       { field: 'name', header: 'Name', sortable: true },
@@ -195,7 +190,7 @@ export const ENTITY_TYPE_CONFIG: Record<string, any> = {
         options: deps.authorities || [],
         validators: [Validators.required],
         colSpan: 'col-span-1',
-        roles: ['ministry'],
+        roles: ['super_admin'],
         filter: true,
         virtualScroll: true,
         loading: deps.isAuthoritiesLoading,

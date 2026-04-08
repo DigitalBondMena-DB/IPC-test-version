@@ -11,7 +11,7 @@ export class AuthService {
   private readonly USERDATA_STORAGE = 'userData';
   private _userData = signal<ILoginResponse | null>(null);
   public userData = this._userData.asReadonly();
-  public role = computed<Role>(() => this._userData()?.user.entity_type as Role);
+  public role = computed<Role>(() => this._userData()?.user.role as Role);
   isAuthenticated = computed(() => !!this._userData()?.token);
   constructor() {
     this.initializeFromStorage();

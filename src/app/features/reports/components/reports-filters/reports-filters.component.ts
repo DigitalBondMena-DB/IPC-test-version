@@ -211,7 +211,7 @@ export class ReportsFiltersComponent implements OnInit {
     return p;
   });
   readonly divisionsResource = this.entityService.get<any>(
-    API_CONFIG.ENDPOINTS.CATEGORIES,
+    API_CONFIG.ENDPOINTS.DIVISIONS,
     this.divisionsParams,
   );
 

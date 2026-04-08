@@ -17,7 +17,7 @@ import { USER_TYPE_CONFIG } from '../config/user-type.config';
     <app-b-page-header
       [title]="config().title"
       [createButtonLabel]="'Create ' + config().entityLabel"
-      [createButtonRoles]="['ministry', 'authority']"
+      [createButtonRoles]="['super_admin', 'authority']"
       (searchChange)="onSearch($event)"
       [showSearch]="true"
       (createClick)="onCreate()"
@@ -111,27 +111,25 @@ export class UserListComponent {
   }
 
   onToggle(event: { item: any }): void {
-    this._Service
-      .toggleUser(this.config().endpoint, this.config().userType, event.item.id)
-      .subscribe({
-        next: (res) => {
-          const isActive = res.data.is_active;
+    this._Service.toggleUser(this.config().endpoint, event.item.id).subscribe({
+      next: (res) => {
+        const isActive = res.data.is_active;
 
-          this.resource.reload();
-          this._MessageService.add({
-            summary: 'Success',
-            detail: `User ${isActive ? 'Activated' : 'Deactivated'} successfully`,
-          });
-        },
-        error: () => {
-          this.resource.reload();
-          this._MessageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to toggle user',
-          });
-        },
-      });
+        this.resource.reload();
+        this._MessageService.add({
+          summary: 'Success',
+          detail: `User ${isActive ? 'Activated' : 'Deactivated'} successfully`,
+        });
+      },
+      error: () => {
+        this.resource.reload();
+        this._MessageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to toggle user',
+        });
+      },
+    });
   }
 
   onEdit(item: any): void {

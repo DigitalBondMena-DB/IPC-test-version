@@ -15,7 +15,7 @@ export const USER_TYPE_CONFIG: Record<string, any> = {
       { field: 'updated_by', header: 'Updated By', sortable: true },
       { field: 'is_active', header: 'Actions', type: 'toggle', customClass: 'justify-end' },
     ],
-    entityEndpoint: API_CONFIG.ENDPOINTS.CATEGORIES,
+    entityEndpoint: API_CONFIG.ENDPOINTS.DIVISIONS,
     navPath: '/dashboard/super-admin-users',
     dependencies: ['generalDivisions'],
   },

@@ -167,7 +167,7 @@ export class EntityIdComponent {
         endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
         type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.SECTORS,
       },
-      generalDivisions: { key: 'category_ids', endpoint: API_CONFIG.ENDPOINTS.CATEGORIES },
+      generalDivisions: { key: 'category_ids', endpoint: API_CONFIG.ENDPOINTS.DIVISIONS },
       authorities: {
         key: 'authority_id',
         endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
