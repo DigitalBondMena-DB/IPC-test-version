@@ -8,7 +8,7 @@
     <p-multiSelect
       [id]="id()"
       [appendTo]="'body'"
-      [options]="options()"
+      [options]="processedOptions()"
       [placeholder]="placeholder()"
       [disabled]="disabled()"
       [filter]="filter()"
@@ -19,6 +19,7 @@
       panelStyleClass="custom-multiselect-panel"
       optionLabel="label"
       optionValue="value"
+      optionDisabled="disabled"
       [ngModel]="value()"
       (ngModelChange)="onModelChange($event)"
       [maxSelectedLabels]="3"

@@ -6,6 +6,7 @@ import {
   ChangeDetectionStrategy,
   output,
   OnDestroy,
+  computed,
 } from '@angular/core';
 import {
   ControlValueAccessor,
@@ -61,6 +62,15 @@ export class BMultiSelectComponent implements ControlValueAccessor, OnDestroy {
   value = signal<any[]>([]);
   disabled = signal<boolean>(false);
 
+  processedOptions = computed(() => {
+    const val = this.value() || [];
+    const isSelectAllActive = val.includes('SELECT_ALL');
+    return this.options().map((opt) => ({
+      ...opt,
+      disabled: isSelectAllActive && opt.value !== 'SELECT_ALL',
+    }));
+  });
+
   private searchSubject = new Subject<string>();
   private searchSubscription = this.searchSubject
     .pipe(debounceTime(300), distinctUntilChanged())
@@ -69,9 +79,23 @@ export class BMultiSelectComponent implements ControlValueAccessor, OnDestroy {
   onChange: any = () => {};
   onTouched: any = () => {};
 
-  onModelChange(val: any) {
-    this.value.set(val || []);
-    this.onChange(val || []);
+  onModelChange(val: any[]) {
+    let newVal = val || [];
+    const oldVal = this.value() || [];
+
+    const isSelectedAll = newVal.includes('SELECT_ALL');
+    const wasSelectedAll = oldVal.includes('SELECT_ALL');
+
+    if (isSelectedAll && !wasSelectedAll) {
+      // "Select All" was just selected - make it exclusive
+      newVal = ['SELECT_ALL'];
+    } else if (wasSelectedAll && newVal.length > 1) {
+      // Something else was selected while "Select All" was there - remove "Select All"
+      newVal = newVal.filter((v) => v !== 'SELECT_ALL');
+    }
+
+    this.value.set(newVal);
+    this.onChange(newVal);
   }
 
   onFilterChange(event: any) {

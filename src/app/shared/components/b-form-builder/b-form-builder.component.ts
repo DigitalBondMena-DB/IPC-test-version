@@ -7,7 +7,7 @@ import {
   inject,
   effect,
 } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { IFormField } from '@shared/models/form-field.model';
 import { BInputComponent } from '../b-input/b-input.component';
@@ -66,7 +66,6 @@ export class BFormBuilderComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      // Rebuild form whenever the filtered list of fields changes
       this.filteredFields();
       this.buildForm();
     });
@@ -82,22 +81,43 @@ export class BFormBuilderComponent implements OnInit {
   ngOnInit(): void {}
 
   private buildForm(): void {
-    const group: any = {};
     const data = this.initialData() || {};
 
-    this.filteredFields().forEach((field) => {
-      group[field.key] = [data[field.key] || '', field.validators || []];
-    });
     if (!this.form) {
-      this.form = this.fb.group(group, { validators: this.groupValidators() });
-    }
-
-    // Listen for changes
-    Object.keys(this.form.controls).forEach((key) => {
-      this.form.get(key)?.valueChanges.subscribe((value) => {
-        this.onValueChange.emit({ key, value });
+      const group: any = {};
+      this.filteredFields().forEach((field) => {
+        group[field.key] = [
+          { value: data[field.key] || '', disabled: !!field.disabled },
+          field.validators || [],
+        ];
       });
-    });
+      this.form = this.fb.group(group, { validators: this.groupValidators() });
+
+      // Listen for changes
+      Object.keys(this.form.controls).forEach((key) => {
+        this.form.get(key)?.valueChanges.subscribe((value) => {
+          this.onValueChange.emit({ key, value });
+        });
+      });
+    } else {
+      // Update existing controls' disabled state and add missing ones
+      this.filteredFields().forEach((field) => {
+        const control = this.form.get(field.key);
+        if (control) {
+          if (field.disabled && control.enabled) control.disable({ emitEvent: false });
+          else if (!field.disabled && control.disabled) control.enable({ emitEvent: false });
+        } else {
+          const newControl = this.fb.control(
+            { value: data[field.key] || '', disabled: !!field.disabled },
+            field.validators || [],
+          );
+          this.form.addControl(field.key, newControl);
+          newControl.valueChanges.subscribe((value) => {
+            this.onValueChange.emit({ key: field.key, value });
+          });
+        }
+      });
+    }
   }
 
   onSubmit(): void {

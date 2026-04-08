@@ -57,7 +57,11 @@ export class EntityIdComponent {
     const type = (data?.type || this.config()?.entity_type)?.toUpperCase();
     const parentType = (data?.parent?.type || this.config()?.entity_type)?.toUpperCase();
     if (type === 'HOSPITAL' && parentType === 'AUTHORITY') {
-      transformed.authority_id = data.parent_id;
+      transformed.authority_ids = Array.isArray(data.parent_id)
+        ? data.parent_id
+        : data.parent_id
+          ? [data.parent_id]
+          : [];
     } else if (type === 'HOSPITAL') {
       transformed.health_division_id = data.parent_id;
       if (data.parent) {
@@ -70,11 +74,22 @@ export class EntityIdComponent {
   private transformEntityData(data: any): any {
     if (!data) return {};
     const transformed = { ...data };
-
     this.setParentIds(transformed, data);
-
     if (data.categories && Array.isArray(data.categories)) {
       transformed.category_ids = data.categories.map((c: any) => c.id);
+    }
+    if (data.authorities && Array.isArray(data.authorities)) {
+      transformed.authority_ids = data.authorities.map((a: any) => a.id);
+    } else if (data.authority_id) {
+      transformed.authority_ids = [data.authority_id];
+    } else if (data.authority && data.authority.id) {
+      transformed.authority_ids = [data.authority.id];
+    }
+
+    if (data.governorates && Array.isArray(data.governorates)) {
+      transformed.governorate_ids = data.governorates.map((g: any) => g.id);
+    } else if (data.governorate_id) {
+      transformed.governorate_ids = [data.governorate_id];
     }
 
     setTimeout(() => {
@@ -110,31 +125,38 @@ export class EntityIdComponent {
       const searchTerm = signal('');
       const page = signal(1);
 
-      const params = computed(() => {
+      const endpoint = computed(() => {
         const values = this.formValues();
-        console.log(deps);
-
         const fieldsConfig = this.config().formFields(deps);
-
-        if (!fieldsConfig) return null;
         const fieldDef = fieldsConfig.find((f: any) => f.key === depConfig.key);
 
-        let parentId = null;
-        if (fieldDef?.dependsOn) {
-          parentId = values[fieldDef.dependsOn];
+        if (!fieldDef) return null;
+
+        let path = fieldDef.dataPath;
+        if (!path) return null;
+
+        if (fieldDef.dependsOn) {
+          const parentId = values[fieldDef.dependsOn];
           if (!parentId) return null;
+
+          const parentField = fieldsConfig.find((f: any) => f.key === fieldDef.dependsOn);
+          const parentPath = parentField?.dataPath;
+
+          if (parentPath) {
+            path = `${parentPath}/${parentId}/${path}`;
+          }
         }
 
-        return {
-          page: page(),
-          per_page: 15,
-          search: searchTerm(),
-          ...(depConfig.type ? { type: depConfig.type } : {}),
-          ...(parentId ? { parent_id: parentId } : {}),
-        };
+        return path;
       });
 
-      const resource = this._Service.get<any>(depConfig.endpoint, params);
+      const params = computed(() => ({
+        page: page(),
+        per_page: 15,
+        search: searchTerm(),
+      }));
+
+      const resource = this._Service.get<any>(endpoint, params);
       const accumulated = signal<any[]>([]);
 
       // Sync accumulated data
@@ -155,26 +177,15 @@ export class EntityIdComponent {
     this.depsState.set(state);
   }
 
-  private getDepConfig(dep: string): { key: string; endpoint: string; type?: string } {
+  private getDepConfig(dep: string): { key: string } {
     const mapping: Record<string, any> = {
-      directorates: {
-        key: 'health_directorate_id',
-        endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.GOVERNORATES,
-      },
-      healthDivisions: {
-        key: 'health_division_id',
-        endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.SECTORS,
-      },
-      generalDivisions: { key: 'category_ids', endpoint: API_CONFIG.ENDPOINTS.DIVISIONS },
-      authorities: {
-        key: 'authority_id',
-        endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.AUTHORITY,
-      },
+      directorates: { key: 'health_directorate_id' },
+      healthDivisions: { key: 'health_division_id' },
+      generalDivisions: { key: 'category_ids' },
+      authorities: { key: 'authority_ids' },
+      governorates: { key: 'governorate_ids' },
     };
-    return mapping[dep];
+    return mapping[dep] || { key: dep };
   }
 
   fields = computed(() => {
@@ -200,14 +211,22 @@ export class EntityIdComponent {
     const rawFields = this.config().formFields(deps);
 
     return rawFields.map((field: any) => {
+      // Add "Select All" option if enabled
+      if (field.hasSelectAll && field.type === 'multiselect' && field.options) {
+        field.options = [{ label: 'Select All', value: 'SELECT_ALL' }, ...field.options];
+      }
+
+      let isDisabled = (field.isDisabledWhenEdit && this.isEdit()) || !!field.disabled;
+
       if (field.dependsOn) {
         const parentValue = values[field.dependsOn];
-        return {
-          ...field,
-          disabled: !parentValue,
-        };
+        isDisabled = isDisabled || !parentValue;
       }
-      return field;
+
+      return {
+        ...field,
+        disabled: isDisabled,
+      };
     });
   });
 
@@ -216,7 +235,8 @@ export class EntityIdComponent {
       health_directorate_id: 'directorates',
       health_division_id: 'healthDivisions',
       category_ids: 'generalDivisions',
-      authority_id: 'authorities',
+      authority_ids: 'authorities',
+      governorate_ids: 'governorates',
     };
     return mapping[prop] || prop;
   }
@@ -320,24 +340,35 @@ export class EntityIdComponent {
       payload.parent_id = formData.health_division_id;
     } else if (formData.health_directorate_id) {
       payload.parent_id = formData.health_directorate_id;
-    } else if (formData.authority_id) {
-      payload.parent_id = formData.authority_id;
     }
 
     // Handle category_ids (General Division)
     if (payload.category_ids && !Array.isArray(payload.category_ids)) {
       payload.category_ids = [payload.category_ids];
-    } else if (formData.division_id) {
-      payload.category_ids = [formData.division_id];
+    }
+
+    // Handle "Select All" transformations
+    const rawFields = this.config().formFields({});
+    rawFields.forEach((field: any) => {
+      if (field.hasSelectAll && field.selectAllKey && Array.isArray(payload[field.key])) {
+        if (payload[field.key].includes('SELECT_ALL')) {
+          delete payload[field.key];
+          payload[field.selectAllKey] = true;
+        }
+      }
+    });
+
+    if (payload.authority_ids && !Array.isArray(payload.authority_ids)) {
+      payload.authority_ids = [payload.authority_ids];
+    }
+
+    // Handle remaining governorate_ids (if not Select All)
+    if (payload.governorate_ids && !Array.isArray(payload.governorate_ids)) {
+      payload.governorate_ids = [payload.governorate_ids];
     }
 
     // Cleanup intermediate keys
-    const entityKeys = [
-      'health_division_id',
-      'health_directorate_id',
-      'authority_id',
-      'division_id',
-    ];
+    const entityKeys = ['health_division_id', 'health_directorate_id', 'division_id'];
     entityKeys.forEach((key) => delete payload[key]);
 
     return payload;

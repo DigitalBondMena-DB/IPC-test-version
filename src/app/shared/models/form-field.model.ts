@@ -13,5 +13,8 @@ export interface IFormField {
   loading?: boolean;
   dependsOn?: string;
   disabled?: boolean;
+  isDisabledWhenEdit?: boolean;
   roles?: Role[];
+  hasSelectAll?: boolean;
+  selectAllKey?: string;
 }

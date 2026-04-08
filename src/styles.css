@@ -42,7 +42,34 @@
   }
 
   .form-control {
-    @apply w-full px-3 py-2.5 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-3 py-2.5 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+  }
+
+  .form-control:disabled {
+    @apply bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0] cursor-not-allowed shadow-none;
+    background-image: linear-gradient(to bottom right, #f8fafc, #f1f5f9);
+  }
+
+  /* PrimeNG Disabled Styles Override */
+  .p-disabled,
+  .p-disabled * {
+    cursor: not-allowed !important;
+  }
+
+  .p-select.p-disabled,
+  .p-multiselect.p-disabled {
+    @apply !bg-[#F1F5F9] !border-[#E2E8F0] !shadow-none opacity-100 !transition-none;
+    background-image: linear-gradient(to bottom right, #f8fafc, #f1f5f9) !important;
+  }
+
+  .p-select.p-disabled .p-select-label,
+  .p-multiselect.p-disabled .p-multiselect-label-container {
+    @apply !text-[#64748B];
+  }
+
+  .p-multiselect.p-disabled .p-multiselect-chip {
+    @apply !bg-[#E2E8F0] !text-[#64748B] !border-none;
+    opacity: 0.8;
   }
 
   /* Hide number input spinners */
