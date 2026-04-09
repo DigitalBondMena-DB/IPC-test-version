@@ -11,11 +11,9 @@ import { CommonModule } from '@angular/common';
 import { BPageHeaderComponent } from '@shared/components/b-page-header/b-page-header.component';
 import { BFormBuilderComponent } from '@shared/components/b-form-builder/b-form-builder.component';
 import { UserManagementService } from '../services/user-management.service';
-import { getUserFormConfig } from '../config/user-form.config';
-import { USER_TYPE_CONFIG } from '../config/user-type.config';
+import { BaseUser } from '../base/base-user';
 import { MessageService } from 'primeng/api';
 import { passwordMatchValidator } from '@shared/validators/password-match.validator';
-import { API_CONFIG } from '@/core/config/api.config';
 
 @Component({
   selector: 'app-user-id',
@@ -54,12 +52,11 @@ export class UserIdComponent {
   private readonly _Service = inject(UserManagementService);
   private readonly _MessageService = inject(MessageService);
 
-  readonly type = signal<string>(this.route.snapshot.data['type']);
-  readonly config = computed(() => USER_TYPE_CONFIG[this.type()]);
+  readonly config = inject(BaseUser);
 
   id = signal<string | null>(this.route.snapshot.paramMap.get('id'));
   isEdit = computed(() => !!this.id());
-  title = computed(() => `${this.isEdit() ? 'Edit' : 'Create'} ${this.config().entityLabel}`);
+  title = computed(() => `${this.isEdit() ? 'Edit' : 'Create'} ${this.config.entityLabel}`);
   submitLabel = computed(() => `${this.isEdit() ? 'Save Changes' : 'Create'}`);
 
   readonly formValues = signal<Record<string, any>>({});
@@ -67,11 +64,12 @@ export class UserIdComponent {
 
   // User data for editing
   userResource = this.isEdit()
-    ? this._Service.getUserById(this.config().endpoint, this.config().userType, this.id()!)
+    ? this._Service.getUserById(this.config.endpoint, this.config.userType, this.id()!)
     : null;
+    
   userData = computed(() => {
     const data = this.userResource?.value() || {};
-    const transformed = this.isEdit() ? this.transformUserData(data) : data;
+    const transformed = this.isEdit() ? this.config.transformResponse(data) : data;
 
     if (this.isEdit()) {
       // Sync formValues with initial user data to trigger cascading dependencies
@@ -79,38 +77,8 @@ export class UserIdComponent {
     }
     return transformed;
   });
+  
   isLoading = computed(() => this.userResource?.isLoading() || false);
-
-  private transformUserData(data: any): any {
-    if (!data) return {};
-    const transformed = { ...data };
-    const type = this.config().userType;
-    if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.HOSPITAL) {
-      transformed.health_directorate_id = data.entity.parent.parent_id;
-      transformed.health_division_id = data.entity.parent_id;
-      transformed.hospital_id = data.entity_id;
-    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.FACILITIES) {
-      transformed.hospital_id = data.entity_id;
-      transformed.authority_id = data.entity.parent_id;
-    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.SECTORS) {
-      transformed.health_division_id = data.entity_id;
-      transformed.health_directorate_id = data.entity.parent_id;
-    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.GOVERNORATES) {
-      transformed.health_directorate_id = data.entity_id;
-    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.AUTHORITY) {
-      transformed.authority_id = data.entity_id;
-    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.SUPER_ADMIN) {
-      if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
-        transformed.category_ids = data.categories.map((c: any) => c.id);
-      }
-    }
-
-    if (data.categories && Array.isArray(data.categories)) {
-      transformed.category_ids = data.categories.map((c: any) => c.id);
-    }
-
-    return transformed;
-  }
 
   // Relational data management
   private depsState = signal<
@@ -130,19 +98,18 @@ export class UserIdComponent {
   }
 
   private initDependencies(): void {
-    const deps = this.config().dependencies || [];
+    const deps = this.config.dependencies || [];
     const state: any = {};
 
     deps.forEach((dep: string) => {
-      const depConfig = this.getDepConfig(dep);
+      const depConfig = this.config.getDependencyConfig(dep);
 
       const searchTerm = signal('');
       const page = signal(1);
 
       const params = computed(() => {
         const values = this.formValues();
-        const userType = this.config().userType;
-        const fieldsConfig = getUserFormConfig(userType, {}, this.isEdit());
+        const fieldsConfig = this.config.getFormFields({}, this.isEdit());
         const fieldDef = fieldsConfig.find((f: any) => f.key === depConfig.key);
 
         let entityId = null;
@@ -180,40 +147,9 @@ export class UserIdComponent {
     this.depsState.set(state);
   }
 
-  private getDepConfig(dep: string): { key: string; endpoint: string; type?: string } {
-    const mapping: Record<string, any> = {
-      directorates: {
-        key: 'health_directorate_id',
-        endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.GOVERNORATES,
-      },
-      healthDivisions: {
-        key: 'health_division_id',
-        endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.SECTORS,
-      },
-      hospitals: {
-        key: 'hospital_id',
-        endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.HOSPITAL,
-      },
-      authorities: {
-        key: 'authority_id',
-        endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.AUTHORITY,
-      },
-      generalDivisions: {
-        key: 'category_ids',
-        endpoint: API_CONFIG.ENDPOINTS.DIVISIONS,
-      },
-    };
-    return mapping[dep];
-  }
-
   fields = computed(() => {
     const s = this.depsState();
     const depsObj: any = {};
-    const userType = this.config().userType;
 
     Object.keys(s).forEach((key) => {
       const state = s[key];
@@ -225,7 +161,7 @@ export class UserIdComponent {
         options.push({ label: null, value: null });
       }
 
-      const configKey = this.getConfigKeyFromProp(key);
+      const configKey = this.config.getConfigKeyFromProp(key);
 
       depsObj[configKey] = options;
       depsObj[`is${configKey?.charAt(0)?.toUpperCase() + configKey.slice(1)}Loading`] =
@@ -233,8 +169,7 @@ export class UserIdComponent {
     });
 
     const values = this.formValues();
-
-    const rawFields = getUserFormConfig(userType, depsObj, this.isEdit());
+    const rawFields = this.config.getFormFields(depsObj, this.isEdit());
 
     return rawFields.map((field: any) => {
       if (field.dependsOn) {
@@ -248,22 +183,10 @@ export class UserIdComponent {
     });
   });
 
-  private getConfigKeyFromProp(prop: string): string {
-    const mapping: Record<string, string> = {
-      health_directorate_id: 'directorates',
-      health_division_id: 'healthDivisions',
-      hospital_id: 'hospitals',
-      authority_id: 'authorities',
-      category_ids: 'generalDivisions',
-    };
-    return mapping[prop] || prop;
-  }
-
   isSubmitting = signal(false);
 
   onValueChange(event: { key: string; value: any }) {
-    const userType = this.config().userType;
-    const fields = getUserFormConfig(userType, {}, this.isEdit());
+    const fields = this.config.getFormFields({}, this.isEdit());
 
     const clearDependents = (key: string, valuesObj: any) => {
       fields.forEach((f: any) => {
@@ -322,10 +245,10 @@ export class UserIdComponent {
   onSubmit(formData: any): void {
     this.isSubmitting.set(true);
     const id = this.id();
-    const endpoint = this.config().endpoint;
-    const userType = this.config().userType;
+    const endpoint = this.config.endpoint;
+    const userType = this.config.userType;
 
-    const payload = this.preparePayload(formData);
+    const payload = this.config.preparePayload(formData);
 
     const obs = id
       ? this._Service.updateUser(endpoint, userType, id, payload)
@@ -337,7 +260,7 @@ export class UserIdComponent {
           summary: 'Success',
           detail: `User ${id ? 'updated' : 'created'} successfully`,
         });
-        this.router.navigate([this.config().navPath]);
+        this.router.navigate([this.config.navPath]);
       },
       error: (err) => {
         this.isSubmitting.set(false);
@@ -350,49 +273,7 @@ export class UserIdComponent {
     });
   }
 
-  private preparePayload(formData: any): any {
-    const payload = { ...formData };
-
-    if (formData.hospital_id) {
-      payload.entity_id = formData.hospital_id;
-    } else if (formData.health_division_id) {
-      payload.entity_id = formData.health_division_id;
-    } else if (formData.health_directorate_id) {
-      payload.entity_id = formData.health_directorate_id;
-    } else if (formData.authority_id) {
-      payload.entity_id = formData.authority_id;
-    }
-    if (formData.category_ids) {
-      payload.category_ids = Array.isArray(formData.category_ids)
-        ? formData.category_ids
-        : [formData.category_ids];
-    }
-
-    if (payload.category_ids && !Array.isArray(payload.category_ids)) {
-      payload.category_ids = [payload.category_ids];
-    }
-
-    const entityKeys = [
-      'hospital_id',
-      'health_division_id',
-      'health_directorate_id',
-      'authority_id',
-    ];
-
-    entityKeys.forEach((key) => {
-      delete payload[key];
-    });
-    Object.keys(payload).forEach((key) => {
-      const value = payload[key];
-
-      if (value === null || value === undefined || value === '') {
-        delete payload[key];
-      }
-    });
-    return payload;
-  }
-
   onCancel(): void {
-    this.router.navigate([this.config().navPath]);
+    this.router.navigate([this.config.navPath]);
   }
 }

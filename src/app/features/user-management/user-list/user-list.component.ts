@@ -1,13 +1,11 @@
 import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { BDataTableComponent } from '@shared/components/b-data-table/b-data-table.component';
 import { BPageHeaderComponent } from '@shared/components/b-page-header/b-page-header.component';
 import { UserManagementService } from '../services/user-management.service';
 import { ITableColumn } from '@shared/models/table.model';
-import { Router, ActivatedRoute } from '@angular/router';
-import { map } from 'rxjs';
+import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
-import { USER_TYPE_CONFIG } from '../config/user-type.config';
+import { BaseUser } from '../base/base-user';
 
 @Component({
   selector: 'app-user-list',
@@ -15,8 +13,8 @@ import { USER_TYPE_CONFIG } from '../config/user-type.config';
   imports: [BDataTableComponent, BPageHeaderComponent],
   template: `
     <app-b-page-header
-      [title]="config().title"
-      [createButtonLabel]="'Create ' + config().entityLabel"
+      [title]="config.title"
+      [createButtonLabel]="'Create ' + config.entityLabel"
       [createButtonRoles]="['super_admin', 'authority']"
       (searchChange)="onSearch($event)"
       [showSearch]="true"
@@ -46,14 +44,10 @@ export class UserListComponent {
   private readonly _Service = inject(UserManagementService);
   private readonly _MessageService = inject(MessageService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
-  readonly type = toSignal(this.route.data.pipe(map((d) => d['type'] as string)), {
-    initialValue: '',
-  });
-  readonly config = computed(() => USER_TYPE_CONFIG[this.type()]);
+  readonly config = inject(BaseUser);
 
-  readonly columns = computed<ITableColumn[]>(() => this.config().columns);
+  readonly columns = computed<ITableColumn[]>(() => this.config.columns);
 
   tableState = signal({
     page: 1,
@@ -77,16 +71,18 @@ export class UserListComponent {
     return p;
   });
 
-  resource = this._Service.getUsers(this.config().endpoint, this.config().userType, this.params);
+  resource = this._Service.getUsers(this.config.endpoint, this.config.userType, this.params);
 
   tableData = computed(() => {
     if (this.resource.error()) return [];
     return this.resource.value()?.data ?? [];
   });
+  
   totalRecords = computed(() => {
     if (this.resource.error()) return 0;
     return this.resource.value()?.total ?? 0;
   });
+  
   isLoading = computed(() => this.resource.isLoading());
   hasError = computed(() => this.resource.error() !== undefined);
 
@@ -111,7 +107,7 @@ export class UserListComponent {
   }
 
   onToggle(event: { item: any }): void {
-    this._Service.toggleUser(this.config().endpoint, event.item.id).subscribe({
+    this._Service.toggleUser(this.config.endpoint, event.item.id).subscribe({
       next: (res) => {
         const isActive = res.data.is_active;
 
@@ -133,10 +129,11 @@ export class UserListComponent {
   }
 
   onEdit(item: any): void {
-    this.router.navigate([this.config().navPath, 'edit', item.id]);
+    this.router.navigate([this.config.navPath, 'edit', item.id]);
   }
 
   onCreate(): void {
-    this.router.navigate([this.config().navPath, 'create']);
+    this.router.navigate([this.config.navPath, 'create']);
   }
 }
+
