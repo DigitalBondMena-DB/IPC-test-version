@@ -17,4 +17,5 @@ export interface IFormField {
   roles?: Role[];
   hasSelectAll?: boolean;
   selectAllKey?: string;
+  dataPath?: string;
 }

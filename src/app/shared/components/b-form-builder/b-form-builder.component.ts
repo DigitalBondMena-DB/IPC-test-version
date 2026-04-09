@@ -151,6 +151,15 @@ export class BFormBuilderComponent implements OnInit {
 
     if (control.hasError('required')) return `${field.label} is required`;
     if (control.hasError('email')) return 'Invalid email address';
+    if (control.hasError('fileType')) {
+      const allowedTypes = control.errors?.['fileType']?.allowedTypes;
+      return `The ${field.label} field must be a file of type: ${allowedTypes}`;
+    }
+    if (control.hasError('fileSize')) {
+      const maxSize = control.errors?.['fileSize']?.maxSize;
+      const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0);
+      return `The ${field.label} field must not exceed ${maxSizeMB}MB`;
+    }
     if (control.hasError('minlength')) {
       const requiredLength = control.errors?.['minlength']?.requiredLength;
       return `${field.label} must be at least ${requiredLength} characters`;

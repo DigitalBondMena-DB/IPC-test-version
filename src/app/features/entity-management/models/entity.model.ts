@@ -1,4 +1,4 @@
-export interface Category {
+export interface Division {
   id: number;
   name: string;
 }
@@ -13,7 +13,7 @@ export interface EntityResponse {
   name: string;
   type: string;
   parent?: Parent;
-  categories?: Category[];
+  categories?: Division[];
   is_active?: boolean;
   [key: string]: any;
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Validators } from '@angular/forms';
 import { BaseEntity } from '../base/base-entity';
+import { IFormField } from '@shared/models/form-field.model';
 import { API_CONFIG } from '@/core/config/api.config';
 
 @Injectable()
@@ -9,9 +10,6 @@ export class FacilityEntity extends BaseEntity {
   override readonly entityLabel = 'Facility';
   override readonly endpoint = API_CONFIG.ENDPOINTS.FACILITIES;
   override readonly navPath = '/dashboard/facilities';
-  override readonly entity_type = 'FACILITIES';
-
-  override readonly dependencies = ['authorities', 'generalDivisions', 'directorates'];
 
   override readonly columns = [
     { field: 'name', header: 'Name', sortable: true },
@@ -22,70 +20,69 @@ export class FacilityEntity extends BaseEntity {
     { field: 'is_active', header: 'Actions', type: 'toggle', customClass: 'justify-end' },
   ];
 
-  override getFormFields(deps: any): any[] {
+  override getFormFields(): IFormField[] {
     return [
       {
         key: 'name',
-        label: 'Hospital Authority Name',
+        label: 'Facility Name',
         type: 'text',
-        placeholder: 'Enter hospital authority name...',
+        placeholder: 'Enter Facility Name...',
         validators: [Validators.required],
         colSpan: 'col-span-1',
-      },
-      {
-        key: 'category_ids',
-        label: 'Divison Name',
-        type: 'multiselect',
-        placeholder: 'Select Division name...',
-        options: deps.generalDivisions || [],
-        validators: [],
-        colSpan: 'col-span-1',
-        virtualScroll: true,
-        filter: true,
-        loading: deps.isGeneralDivisionsLoading,
-        dataPath: API_CONFIG.ENDPOINTS.DIVISIONS,
       },
       {
         key: 'authority_ids',
-        label: 'Authority',
-        type: 'multiselect',
-        placeholder: 'Select authority...',
-        options: deps.authorities || [],
+        label: 'Authority Name',
+        type: 'select',
+        placeholder: 'Select authority name...',
         validators: [Validators.required],
-        colSpan: 'col-span-1',
         roles: ['super_admin'],
+        colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
-        loading: deps.isAuthoritiesLoading,
         dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
         hasSelectAll: true,
-        selectAllKey: 'all-authority',
+        selectAllKey: 'all_authorities',
+        isDisabledWhenEdit: true,
       },
       {
-        key: 'authority_id',
+        key: 'division_ids',
+        label: 'Division Name',
+        type: 'multiselect',
+        placeholder: 'Select division name...',
+        validators: [Validators.required],
+        colSpan: 'col-span-1',
+        filter: true,
+        virtualScroll: true,
+        dataPath: API_CONFIG.ENDPOINTS.DIVISIONS,
+        hasSelectAll: true,
+        selectAllKey: 'all_divisions',
+        dependsOn: 'authority_ids',
+      },
+      {
+        key: 'sector_ids',
         label: 'Sector',
         type: 'multiselect',
         placeholder: 'Select Sector',
-        options: deps.authorities || [],
         validators: [Validators.required],
         colSpan: 'col-span-1',
+        isDisabledWhenEdit: true,
         filter: true,
         virtualScroll: true,
-        loading: deps.isAuthoritiesLoading,
         dataPath: API_CONFIG.ENDPOINTS.SECTORS,
+        dependsOn: 'authority_ids',
       },
       {
-        key: 'health_directorate_id',
+        key: 'governorate_ids',
         label: 'Governorate',
         type: 'multiselect',
-        placeholder: 'Select Governorate...',
-        options: deps.directorates || [],
+        placeholder: 'Select Governorate',
         validators: [Validators.required],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
-        loading: deps.isDirectoratesLoading,
         dataPath: API_CONFIG.ENDPOINTS.GOVERNORATES,
+        dependsOn: 'sector_ids',
       },
     ];
   }

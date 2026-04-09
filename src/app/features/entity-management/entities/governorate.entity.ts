@@ -11,8 +11,6 @@ export class GovernorateEntity extends BaseEntity {
   override readonly navPath = '/dashboard/governorates';
   override readonly entity_type = 'GOVERNORATES';
 
-  override readonly dependencies = ['authorities'];
-
   override readonly columns = [
     { field: 'name', header: 'Name', sortable: true },
     { field: 'updated_at', header: 'Last Update', sortable: true, type: 'date' },
@@ -20,13 +18,13 @@ export class GovernorateEntity extends BaseEntity {
     { field: 'is_active', header: 'Actions', type: 'toggle', customClass: 'justify-end' },
   ];
 
-  override getFormFields(deps: any): any[] {
+  override getFormFields(isEdit?: boolean): any[] {
     return [
       {
         key: 'name',
         label: 'Governorate Name',
         type: 'text',
-        placeholder: 'Enter Governorate name...',
+        placeholder: 'Enter governorate name',
         validators: [Validators.required],
         colSpan: 'col-span-1',
       },
@@ -35,17 +33,15 @@ export class GovernorateEntity extends BaseEntity {
         label: 'Authority Name',
         type: 'multiselect',
         placeholder: 'Select authority name...',
-        options: deps.authorities || [],
         validators: [Validators.required],
         roles: ['super_admin'],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
-        loading: deps.isAuthoritiesLoading,
         dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
         hasSelectAll: true,
-        isDisabledWhenEdit: true,
         selectAllKey: 'all_authorities',
+        isDisabledWhenEdit: true,
       },
     ];
   }

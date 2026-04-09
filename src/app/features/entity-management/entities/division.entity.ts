@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Validators } from '@angular/forms';
 import { BaseEntity } from '../base/base-entity';
+import { IFormField } from '@shared/models/form-field.model';
 import { API_CONFIG } from '@/core/config/api.config';
 
 @Injectable()
@@ -9,9 +10,6 @@ export class DivisionEntity extends BaseEntity {
   override readonly entityLabel = 'Division';
   override readonly endpoint = API_CONFIG.ENDPOINTS.DIVISIONS;
   override readonly navPath = '/dashboard/divisions';
-  override readonly entity_type = 'DIVISION';
-
-  override readonly dependencies = ['authorities'];
 
   override readonly columns = [
     { field: 'name', header: 'Name', sortable: true },
@@ -20,7 +18,7 @@ export class DivisionEntity extends BaseEntity {
     { field: 'is_active', header: 'Actions', type: 'toggle', customClass: 'justify-end' },
   ];
 
-  override getFormFields(deps: any): any[] {
+  override getFormFields(isEdit?: boolean): IFormField[] {
     return [
       {
         key: 'name',
@@ -35,13 +33,11 @@ export class DivisionEntity extends BaseEntity {
         label: 'Authority Name',
         type: 'multiselect',
         placeholder: 'Select authority name...',
-        options: deps.authorities || [],
         validators: [Validators.required],
         roles: ['super_admin'],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
-        loading: deps.isAuthoritiesLoading,
         dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
         hasSelectAll: true,
         selectAllKey: 'all_authorities',

@@ -9,9 +9,6 @@ export class SectorEntity extends BaseEntity {
   override readonly entityLabel = 'Sector';
   override readonly endpoint = API_CONFIG.ENDPOINTS.SECTORS;
   override readonly navPath = '/dashboard/sectors';
-  override readonly entity_type = 'SECTORS';
-
-  override readonly dependencies = ['authorities', 'governorates'];
 
   override readonly columns = [
     { field: 'name', header: 'Name', sortable: true },
@@ -21,48 +18,45 @@ export class SectorEntity extends BaseEntity {
     { field: 'is_active', header: 'Actions', type: 'toggle', customClass: 'justify-end' },
   ];
 
-  override getFormFields(deps: any): any[] {
+  override getFormFields(isEdit?: boolean): any[] {
     return [
       {
         key: 'name',
         label: 'Sector Name',
         type: 'text',
-        placeholder: 'Enter sector name...',
+        placeholder: 'Enter sector name',
         validators: [Validators.required],
+        colSpan: 'col-span-full',
+      },
+      {
+        key: 'authority_ids',
+        label: 'Authority Name',
+        type: 'select',
+        placeholder: 'Select authority name...',
+        validators: [Validators.required],
+        roles: ['super_admin'],
         colSpan: 'col-span-1',
+        filter: true,
+        virtualScroll: true,
+        dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
+        hasSelectAll: true,
+        selectAllKey: 'all_authorities',
+        isDisabledWhenEdit: true,
       },
       {
         key: 'governorate_ids',
         label: 'Governorate',
         type: 'multiselect',
         placeholder: 'Select Governorate...',
-        options: deps.governorates || [],
         validators: [Validators.required],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
-        loading: deps.isGovernoratesLoading,
         dataPath: API_CONFIG.ENDPOINTS.GOVERNORATES,
         hasSelectAll: true,
         selectAllKey: 'all_governorates',
         isDisabledWhenEdit: true,
-      },
-      {
-        key: 'authority_ids',
-        label: 'Authority Name',
-        type: 'multiselect',
-        placeholder: 'Select authority name...',
-        options: deps.authorities || [],
-        validators: [Validators.required],
-        roles: ['super_admin'],
-        colSpan: 'col-span-1',
-        filter: true,
-        virtualScroll: true,
-        loading: deps.isAuthoritiesLoading,
-        dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
-        hasSelectAll: true,
-        selectAllKey: 'all_authorities',
-        isDisabledWhenEdit: true,
+        dependsOn: 'authority_ids',
       },
     ];
   }

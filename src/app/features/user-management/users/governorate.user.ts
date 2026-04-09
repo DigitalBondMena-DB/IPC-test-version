@@ -23,46 +23,41 @@ export class GovernorateUser extends BaseUser {
   ];
   override readonly entityEndpoint = API_CONFIG.ENDPOINTS.ENTITIES.BASE;
   override readonly entityType = API_CONFIG.ENDPOINTS.ENTITIES.TYPE.GOVERNORATES;
-  override readonly dependencies = ['directorates', 'generalDivisions', 'authorities'];
-
-  override getRoleFields(deps: any, _isEdit: boolean): IFormField[] {
+  override getRoleFields(isEdit?: boolean): IFormField[] {
     return [
       {
         key: 'health_directorate_id',
         label: 'Governorate',
         type: 'multiselect',
         placeholder: 'Select Governorate',
-        options: deps.generalDivisions || [],
         validators: [],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
-        loading: deps.isGeneralDivisionsLoading,
+        dataPath: API_CONFIG.ENDPOINTS.ENTITIES.BASE + '?type=' + API_CONFIG.ENDPOINTS.ENTITIES.TYPE.GOVERNORATES,
       },
       {
         key: 'category_ids',
         label: 'Division',
         type: 'multiselect',
         placeholder: 'Select Divisions',
-        options: deps.generalDivisions || [],
         validators: [],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
-        loading: deps.isGeneralDivisionsLoading,
+        dataPath: API_CONFIG.ENDPOINTS.DIVISIONS,
       },
       {
         key: 'authority_id',
         label: 'Authority',
         type: 'select',
         placeholder: 'Select Authority',
-        options: deps.authorities || [],
         validators: [Validators.required],
         colSpan: 'col-span-1',
         roles: ['super_admin'],
         filter: true,
         virtualScroll: true,
-        loading: deps.isAuthoritiesLoading,
+        dataPath: API_CONFIG.ENDPOINTS.ENTITIES.BASE + '?type=' + API_CONFIG.ENDPOINTS.ENTITIES.TYPE.AUTHORITY,
       },
     ];
   }

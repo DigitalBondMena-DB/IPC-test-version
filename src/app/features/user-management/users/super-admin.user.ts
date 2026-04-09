@@ -20,21 +20,18 @@ export class SuperAdminUser extends BaseUser {
     { field: 'is_active', header: 'Actions', type: 'toggle', customClass: 'justify-end' },
   ];
   override readonly entityEndpoint = API_CONFIG.ENDPOINTS.DIVISIONS;
-  override readonly dependencies = ['generalDivisions'];
-
-  override getRoleFields(deps: any, _isEdit: boolean): IFormField[] {
+  override getRoleFields(isEdit?: boolean): IFormField[] {
     return [
       {
         key: 'category_ids',
         label: 'Division',
         type: 'multiselect',
         placeholder: 'Select Divisions',
-        options: deps.generalDivisions || [],
         validators: [],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
-        loading: deps.isGeneralDivisionsLoading,
+        dataPath: API_CONFIG.ENDPOINTS.DIVISIONS,
       },
     ];
   }

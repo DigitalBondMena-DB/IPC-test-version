@@ -54,7 +54,7 @@ export class UserManagementService extends HttpService {
   }
 
   updateUser(endpoint: string, userType: string, id: string, data: any): Observable<any> {
-    return this.http.put<any>(`${API_CONFIG.BASE_URL}${endpoint}/${id}`, {
+    return this.put<any>(`${endpoint}/${id}`, {
       ...data,
       type: userType,
     });

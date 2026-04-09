@@ -10,17 +10,16 @@ export abstract class BaseUser {
   abstract readonly columns: any[];
   abstract readonly entityEndpoint: string;
   abstract readonly navPath: string;
-  abstract readonly dependencies: string[];
   readonly entityType?: string;
 
   // Each specific user type provides its own role-specific inputs
-  abstract getRoleFields(deps: any, isEdit: boolean): IFormField[];
+  abstract getRoleFields(isEdit?: boolean): IFormField[];
 
   // Combines common top/bottom inputs with role-specific inputs
-  getFormFields(deps: any, isEdit: boolean): IFormField[] {
+  getFormFields(isEdit?: boolean): IFormField[] {
     const fields = [
       ...this.getHigherInputs(),
-      ...this.getRoleFields(deps, isEdit),
+      ...this.getRoleFields(isEdit),
       ...this.getLowerInputs(),
     ];
     return fields;
@@ -74,49 +73,6 @@ export abstract class BaseUser {
         colSpan: 'col-span-1',
       },
     ];
-  }
-
-  // Maps dependency string references to precise API parameters
-  getDependencyConfig(dep: string): { key: string; endpoint: string; type?: string } {
-    const mapping: Record<string, any> = {
-      directorates: {
-        key: 'health_directorate_id',
-        endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.GOVERNORATES,
-      },
-      healthDivisions: {
-        key: 'health_division_id',
-        endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.SECTORS,
-      },
-      hospitals: {
-        key: 'hospital_id',
-        endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.HOSPITAL,
-      },
-      authorities: {
-        key: 'authority_id',
-        endpoint: API_CONFIG.ENDPOINTS.ENTITIES.BASE,
-        type: API_CONFIG.ENDPOINTS.ENTITIES.TYPE.AUTHORITY,
-      },
-      generalDivisions: {
-        key: 'category_ids',
-        endpoint: API_CONFIG.ENDPOINTS.DIVISIONS,
-      },
-    };
-    return mapping[dep];
-  }
-
-  // Maps backend UI keys back to config strings
-  getConfigKeyFromProp(prop: string): string {
-    const mapping: Record<string, string> = {
-      health_directorate_id: 'directorates',
-      health_division_id: 'healthDivisions',
-      hospital_id: 'hospitals',
-      authority_id: 'authorities',
-      category_ids: 'generalDivisions',
-    };
-    return mapping[prop] || prop;
   }
 
   // Hook for reshaping data when loading for edit

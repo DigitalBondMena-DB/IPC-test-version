@@ -1,4 +1,3 @@
-import { API_CONFIG } from '@/core/config/api.config';
 import { HttpService } from '@/core/services/http.service';
 import { HttpResourceRef } from '@angular/common/http';
 import { Injectable, Signal, computed } from '@angular/core';
@@ -73,7 +72,7 @@ export class EntityManagementService extends HttpService {
     if (entityType) {
       body['type'] = entityType;
     }
-    return this.http.put<any>(`${API_CONFIG.BASE_URL}${endpoint}/${id}`, body);
+    return this.put<any>(`${endpoint}/${id}`, body);
   }
 
   toggleEntity(endpoint: string, entityType: string | undefined, id: string): Observable<any> {

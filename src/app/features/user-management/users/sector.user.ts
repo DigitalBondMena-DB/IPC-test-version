@@ -24,46 +24,41 @@ export class SectorUser extends BaseUser {
   ];
   override readonly entityEndpoint = API_CONFIG.ENDPOINTS.ENTITIES.BASE;
   override readonly entityType = API_CONFIG.ENDPOINTS.ENTITIES.TYPE.SECTORS;
-  override readonly dependencies = ['directorates', 'healthDivisions', 'generalDivisions'];
-
-  override getRoleFields(deps: any, _isEdit: boolean): IFormField[] {
+  override getRoleFields(isEdit?: boolean): IFormField[] {
     return [
       {
         key: 'category_ids',
         label: 'Division',
         type: 'multiselect',
         placeholder: 'Select Divisions',
-        options: deps.generalDivisions || [],
         validators: [],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
-        loading: deps.isGeneralDivisionsLoading,
+        dataPath: API_CONFIG.ENDPOINTS.DIVISIONS,
       },
       {
         key: 'health_directorate_id',
         label: 'Health Directorate',
         type: 'select',
         placeholder: 'Select Health Directorate',
-        options: deps.directorates || [],
         validators: [Validators.required],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
-        loading: deps.isDirectoratesLoading,
+        dataPath: API_CONFIG.ENDPOINTS.ENTITIES.BASE + '?type=' + API_CONFIG.ENDPOINTS.ENTITIES.TYPE.GOVERNORATES,
       },
       {
         key: 'health_division_id',
         label: 'Division Name',
         type: 'select',
         placeholder: 'Select Division',
-        options: deps.healthDivisions || [],
         validators: [Validators.required],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
-        loading: deps.isHealthDivisionsLoading,
         dependsOn: 'health_directorate_id',
+        dataPath: API_CONFIG.ENDPOINTS.ENTITIES.BASE + '?type=' + API_CONFIG.ENDPOINTS.ENTITIES.TYPE.SECTORS,
       },
     ];
   }

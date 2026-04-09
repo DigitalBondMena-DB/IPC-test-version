@@ -6,31 +6,49 @@ export abstract class BaseEntity {
   abstract readonly columns: any[];
   readonly entity_type?: string;
   readonly parent_type?: string;
-  readonly dependencies: string[] = [];
-
-  abstract getFormFields(deps: any): any[];
+  abstract getFormFields(isEdit?: boolean): any[];
 
   // Data transformation hooks
   transformResponse(data: any): any {
     if (!data) return {};
     const transformed = { ...data };
 
-    // Standard relational arrays mappings
-    if (data.categories && Array.isArray(data.categories)) {
-      transformed.category_ids = data.categories.map((c: any) => c.id);
-    }
-    if (data.authorities && Array.isArray(data.authorities)) {
-      transformed.authority_ids = data.authorities.map((a: any) => a.id);
-    } else if (data.authority_id) {
-      transformed.authority_ids = [data.authority_id];
-    } else if (data.authority && data.authority.id) {
-      transformed.authority_ids = [data.authority.id];
+    // Dynamic relational mapping based on available form fields
+    const fields = this.getFormFields(true);
+    const mappings: Record<string, string> = {
+      categories: 'category_ids',
+      authorities: 'authority_ids',
+      governorates: 'governorate_ids',
+      sectors: 'sector_ids',
+      divisions: 'division_ids',
+    };
+
+    Object.entries(mappings).forEach(([apiPath, formKey]) => {
+      const apiData = data[apiPath];
+      if (apiData && Array.isArray(apiData)) {
+        const ids = apiData.map((item: any) => item.id);
+        const field = fields.find((f: any) => f.key === formKey);
+
+        if (field?.type === 'select') {
+          transformed[formKey] = ids.length > 0 ? ids[0] : null;
+        } else {
+          transformed[formKey] = ids;
+        }
+      }
+    });
+
+    // Fallback for single ID properties if array mapping didn't find data
+    if (!transformed.authority_ids) {
+      const authId = data.authority_id || data.authority?.id;
+      if (authId) {
+        const field = fields.find((f: any) => f.key === 'authority_ids');
+        transformed.authority_ids = field?.type === 'select' ? authId : [authId];
+      }
     }
 
-    if (data.governorates && Array.isArray(data.governorates)) {
-      transformed.governorate_ids = data.governorates.map((g: any) => g.id);
-    } else if (data.governorate_id) {
-      transformed.governorate_ids = [data.governorate_id];
+    if (!transformed.governorate_ids && data.governorate_id) {
+      const field = fields.find((f: any) => f.key === 'governorate_ids');
+      transformed.governorate_ids = field?.type === 'select' ? data.governorate_id : [data.governorate_id];
     }
 
     this.applyParentIdsDefaultFallback(transformed, data);
@@ -62,7 +80,7 @@ export abstract class BaseEntity {
     }
 
     // Default "Select All" logic handling
-    const rawFields = this.getFormFields({});
+    const rawFields = this.getFormFields();
     rawFields.forEach((field: any) => {
       if (field.hasSelectAll && field.selectAllKey && Array.isArray(payload[field.key])) {
         if (payload[field.key].includes('SELECT_ALL')) {
@@ -79,34 +97,10 @@ export abstract class BaseEntity {
     return payload;
   }
 
-  // Maps dependency endpoint config to expected internal UI keys
-  getDependencyConfig(dep: string): { key: string } {
-    const mapping: Record<string, any> = {
-      directorates: { key: 'health_directorate_id' },
-      healthDivisions: { key: 'health_division_id' },
-      generalDivisions: { key: 'category_ids' },
-      authorities: { key: 'authority_ids' },
-      governorates: { key: 'governorate_ids' },
-    };
-    return mapping[dep] || { key: dep };
-  }
-
-  // Translates internal UI keys back to config keys
-  getConfigKeyFromProp(prop: string): string {
-    const mapping: Record<string, string> = {
-      health_directorate_id: 'directorates',
-      health_division_id: 'healthDivisions',
-      category_ids: 'generalDivisions',
-      authority_ids: 'authorities',
-      governorate_ids: 'governorates',
-    };
-    return mapping[prop] || prop;
-  }
-
   // Legacy hardcoded mappings maintained for compatibility with implicit unconfigured entities like 'HOSPITAL'
   protected applyParentIdsDefaultFallback(transformed: any, data: any): void {
-    const type = (data?.type || this.entity_type)?.toUpperCase();
-    const parentType = (data?.parent?.type || this.entity_type)?.toUpperCase();
+    const type = String(data?.type || this.entity_type || '').toUpperCase();
+    const parentType = String(data?.parent?.type || this.entity_type || '').toUpperCase();
 
     if (type === 'HOSPITAL' && parentType === 'AUTHORITY') {
       transformed.authority_ids = Array.isArray(data.parent_id)

@@ -98,36 +98,43 @@ export class UserIdComponent {
   }
 
   private initDependencies(): void {
-    const deps = this.config.dependencies || [];
     const state: any = {};
+    const fields = this.config.getFormFields(this.isEdit());
 
-    deps.forEach((dep: string) => {
-      const depConfig = this.config.getDependencyConfig(dep);
-
+    fields.filter((f: any) => f.dataPath).forEach((field: any) => {
       const searchTerm = signal('');
       const page = signal(1);
 
-      const params = computed(() => {
+      const endpoint = computed(() => {
         const values = this.formValues();
-        const fieldsConfig = this.config.getFormFields({}, this.isEdit());
-        const fieldDef = fieldsConfig.find((f: any) => f.key === depConfig.key);
+        let path = field.dataPath;
 
-        let entityId = null;
-        if (fieldDef?.dependsOn) {
-          entityId = values[fieldDef.dependsOn];
-          if (!entityId) return null;
+        if (field.dependsOn) {
+          const parentId = values[field.dependsOn];
+          if (!parentId || (Array.isArray(parentId) && parentId.length === 0)) return null;
         }
 
-        return {
+        return path;
+      });
+
+      const finalParams = computed(() => {
+        const p: any = {
           page: page(),
           per_page: 15,
           search: searchTerm(),
-          ...(depConfig.type ? { type: depConfig.type } : {}),
-          ...(entityId ? { parent_id: entityId } : {}),
         };
+
+        if (field.dependsOn) {
+           const parentValue = this.formValues()[field.dependsOn];
+           if (parentValue) {
+             let baseKey = field.dependsOn.endsWith('_ids') ? field.dependsOn.replace('_ids', '_id') : field.dependsOn;
+             p[`${baseKey}[]`] = Array.isArray(parentValue) ? parentValue : [parentValue];
+           }
+        }
+        return p;
       });
 
-      const resource = this._Service.get<any>(depConfig.endpoint, params);
+      const resource = this._Service.get<any>(endpoint, finalParams);
       const accumulated = signal<any[]>([]);
 
       effect(() => {
@@ -141,7 +148,7 @@ export class UserIdComponent {
         }
       });
 
-      state[depConfig.key] = { searchTerm, page, accumulated, resource };
+      state[field.key] = { searchTerm, page, accumulated, resource };
     });
 
     this.depsState.set(state);
@@ -149,44 +156,62 @@ export class UserIdComponent {
 
   fields = computed(() => {
     const s = this.depsState();
-    const depsObj: any = {};
-
-    Object.keys(s).forEach((key) => {
-      const state = s[key];
-      const filterdOptions = state.accumulated().filter((e: any) => e.is_active);
-      const options = filterdOptions.map((i: any) => ({ label: i.name, value: i.id }));
-
-      const res = state.resource.value();
-      if (res && state.page() < res.last_page) {
-        options.push({ label: null, value: null });
-      }
-
-      const configKey = this.config.getConfigKeyFromProp(key);
-
-      depsObj[configKey] = options;
-      depsObj[`is${configKey?.charAt(0)?.toUpperCase() + configKey.slice(1)}Loading`] =
-        state.resource.isLoading();
-    });
-
     const values = this.formValues();
-    const rawFields = this.config.getFormFields(depsObj, this.isEdit());
+    const rawFields = this.config.getFormFields(this.isEdit());
 
     return rawFields.map((field: any) => {
+      let overrides: any = {};
+
+      if (field.dataPath && s[field.key]) {
+        const state = s[field.key];
+        const filterdOptions = state.accumulated().filter((e: any) => e.is_active);
+        const options = filterdOptions.map((i: any) => ({ 
+          label: i.name || '', 
+          value: i.id 
+        }));
+
+        const res = state.resource.value();
+        if (res && state.page() < res.last_page) {
+          options.push({ label: null, value: null });
+        }
+
+        overrides.options = options;
+        overrides.loading = state.resource.isLoading();
+
+        // Show message if no data returned for a selection
+        const parentValue = field.dependsOn ? values[field.dependsOn] : null;
+        const hasParentValue = parentValue && (!Array.isArray(parentValue) || parentValue.length > 0);
+
+        if (
+          !state.resource.isLoading() &&
+          filterdOptions.length === 0 &&
+          field.dependsOn &&
+          hasParentValue
+        ) {
+          overrides.subLable = 'No data available for this selection';
+        }
+      }
+
+      let isDisabled = (field.isDisabledWhenEdit && this.isEdit()) || !!field.disabled;
+
       if (field.dependsOn) {
         const parentValue = values[field.dependsOn];
-        return {
-          ...field,
-          disabled: !parentValue,
-        };
+        const hasParentValue = parentValue && (!Array.isArray(parentValue) || parentValue.length > 0);
+        isDisabled = isDisabled || !hasParentValue;
       }
-      return field;
+
+      return {
+        ...field,
+        ...overrides,
+        disabled: isDisabled,
+      };
     });
   });
 
   isSubmitting = signal(false);
 
   onValueChange(event: { key: string; value: any }) {
-    const fields = this.config.getFormFields({}, this.isEdit());
+    const fields = this.config.getFormFields(this.isEdit());
 
     const clearDependents = (key: string, valuesObj: any) => {
       fields.forEach((f: any) => {

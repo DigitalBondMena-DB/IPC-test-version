@@ -45,7 +45,7 @@ export class EntityIdComponent {
     () => this.config.entity_type,
     () => this.id(),
   );
-  
+
   entityData = computed(() => {
     const data = this.entityResource?.value();
     if (!data) return {};
@@ -55,7 +55,7 @@ export class EntityIdComponent {
     });
     return transformed;
   });
-  
+
   isLoading = computed(() => (this.entityResource ? this.entityResource.isLoading() : false));
 
   // Relational data management
@@ -76,103 +76,122 @@ export class EntityIdComponent {
   }
 
   private initDependencies(): void {
-    const deps = this.config.dependencies || [];
     const state: any = {};
+    const fields = this.config.getFormFields(this.isEdit());
 
-    deps.forEach((dep: string) => {
-      const depConfig = this.config.getDependencyConfig(dep);
-      const searchTerm = signal('');
-      const page = signal(1);
+    fields
+      .filter((f: any) => f.dataPath)
+      .forEach((field: any) => {
+        const searchTerm = signal('');
+        const page = signal(1);
 
-      const endpoint = computed(() => {
-        const values = this.formValues();
-        const fieldsConfig = this.config.getFormFields(deps);
-        const fieldDef = fieldsConfig.find((f: any) => f.key === depConfig.key);
+        const endpoint = computed(() => {
+          const values = this.formValues();
+          let path = field.dataPath;
 
-        if (!fieldDef) return null;
-
-        let path = fieldDef.dataPath;
-        if (!path) return null;
-
-        if (fieldDef.dependsOn) {
-          const parentId = values[fieldDef.dependsOn];
-          if (!parentId) return null;
-
-          const parentField = fieldsConfig.find((f: any) => f.key === fieldDef.dependsOn);
-          const parentPath = parentField?.dataPath;
-
-          if (parentPath) {
-            path = `${parentPath}/${parentId}/${path}`;
+          if (field.dependsOn) {
+            const parentId = values[field.dependsOn];
+            if (!parentId || (Array.isArray(parentId) && parentId.length === 0)) return null;
           }
-        }
 
-        return path;
+          return path;
+        });
+
+        const params = computed(() => {
+          const p: any = {
+            page: page(),
+            per_page: 15,
+            search: searchTerm(),
+          };
+
+          if (field.dependsOn) {
+            const parentValue = this.formValues()[field.dependsOn];
+            if (parentValue) {
+              let baseKey = field.dependsOn.endsWith('_ids')
+                ? field.dependsOn.replace('_ids', '_id')
+                : field.dependsOn;
+              p[`${baseKey}[]`] = Array.isArray(parentValue) ? parentValue : [parentValue];
+            }
+          }
+          return p;
+        });
+
+        const resource = this._Service.get<any>(endpoint, params);
+        const accumulated = signal<any[]>([]);
+
+        // Sync accumulated data
+        effect(() => {
+          if (resource.isLoading()) return;
+          const res = resource.value();
+          if (res?.data) {
+            if (page() === 1) accumulated.set(res.data);
+            else accumulated.update((prev) => [...prev, ...res.data]);
+          } else if (!res && !resource.isLoading()) {
+            accumulated.set([]);
+          }
+        });
+
+        state[field.key] = { searchTerm, page, accumulated, resource };
       });
-
-      const params = computed(() => ({
-        page: page(),
-        per_page: 15,
-        search: searchTerm(),
-      }));
-
-      const resource = this._Service.get<any>(endpoint, params);
-      const accumulated = signal<any[]>([]);
-
-      // Sync accumulated data
-      effect(() => {
-        if (resource.isLoading()) return;
-        const res = resource.value();
-        if (res?.data) {
-          if (page() === 1) accumulated.set(res.data);
-          else accumulated.update((prev) => [...prev, ...res.data]);
-        } else if (!res && !resource.isLoading()) {
-          accumulated.set([]);
-        }
-      });
-
-      state[depConfig.key] = { searchTerm, page, accumulated, resource };
-    });
 
     this.depsState.set(state);
   }
 
   fields = computed(() => {
     const s = this.depsState();
-    const deps: any = {};
-
-    Object.keys(s).forEach((key) => {
-      const state = s[key];
-      const filterdOptions = state.accumulated().filter((e: any) => e.is_active);
-      const options = filterdOptions.map((i: any) => ({ label: i.name, value: i.id }));
-      const res = state.resource.value();
-      if (res && state.page() < res.last_page) {
-        options.push({ label: null, value: null });
-      }
-      
-      const configKey = this.config.getConfigKeyFromProp(key);
-      deps[configKey] = options;
-      deps[`is${configKey?.charAt(0)?.toUpperCase() + configKey.slice(1)}Loading`] =
-        state.resource.isLoading();
-    });
-
     const values = this.formValues();
-    const rawFields = this.config.getFormFields(deps);
+    const rawFields = this.config.getFormFields(this.isEdit());
 
     return rawFields.map((field: any) => {
-      // Add "Select All" option if enabled
-      if (field.hasSelectAll && field.type === 'multiselect' && field.options) {
-        field.options = [{ label: 'Select All', value: 'SELECT_ALL' }, ...field.options];
+      let overrides: any = {};
+
+      if (field.dataPath && s[field.key]) {
+        const state = s[field.key];
+        const filterdOptions = state.accumulated().filter((e: any) => e.is_active);
+        const options = filterdOptions.map((i: any) => ({ 
+          label: i.name || '', 
+          value: i.id 
+        }));
+        const res = state.resource.value();
+        if (res && state.page() < res.last_page) {
+          options.push({ label: null, value: null });
+        }
+
+        overrides.options = options;
+        overrides.loading = state.resource.isLoading();
+
+        // Show message if no data returned for a selection
+        const parentValue = field.dependsOn ? values[field.dependsOn] : null;
+        const hasParentValue =
+          parentValue && (!Array.isArray(parentValue) || parentValue.length > 0);
+
+        if (
+          !state.resource.isLoading() &&
+          filterdOptions.length === 0 &&
+          field.dependsOn &&
+          hasParentValue
+        ) {
+          overrides.subLable = 'No data available for this selection';
+          field.disabled = true;
+        }
+      }
+
+      if (field.hasSelectAll && field.type === 'multiselect' && overrides.options) {
+        overrides.options = [{ label: 'Select All', value: 'SELECT_ALL' }, ...overrides.options];
       }
 
       let isDisabled = (field.isDisabledWhenEdit && this.isEdit()) || !!field.disabled;
 
       if (field.dependsOn) {
         const parentValue = values[field.dependsOn];
-        isDisabled = isDisabled || !parentValue;
+        const hasParentValue =
+          parentValue && (!Array.isArray(parentValue) || parentValue.length > 0);
+        isDisabled = isDisabled || !hasParentValue;
       }
 
       return {
         ...field,
+        ...overrides,
         disabled: isDisabled,
       };
     });
@@ -181,7 +200,7 @@ export class EntityIdComponent {
   isSubmitting = signal(false);
 
   onValueChange(event: { key: string; value: any }) {
-    const fields = this.config.getFormFields({});
+    const fields = this.config.getFormFields(this.isEdit());
 
     const clearDependents = (key: string, valuesObj: any) => {
       fields.forEach((f: any) => {
@@ -203,14 +222,13 @@ export class EntityIdComponent {
     const resetState = (key: string) => {
       const state = this.depsState();
       Object.keys(state).forEach((k) => {
-        const configKeyForState = this.config.getConfigKeyFromProp(k);
-        const fieldDef = fields.find((f: any) => f.key === configKeyForState);
+        const fieldDef = fields.find((f: any) => f.key === k);
 
         if (fieldDef?.dependsOn === key) {
           state[k].page.set(1);
           state[k].searchTerm.set('');
           state[k].accumulated.set([]);
-          resetState(configKeyForState);
+          resetState(k);
         }
       });
     };
@@ -242,7 +260,7 @@ export class EntityIdComponent {
   onSubmit(formData: any): void {
     this.isSubmitting.set(true);
     const payload = this.config.preparePayload(formData);
-    
+
     const obs = this.isEdit()
       ? this._Service.updateEntity(
           this.config.endpoint,
