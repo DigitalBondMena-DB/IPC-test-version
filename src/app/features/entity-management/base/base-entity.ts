@@ -62,12 +62,20 @@ export abstract class BaseEntity {
 
     const fields = this.getFormFields(true);
 
-    // Standardize all select/multiselect as arrays
+    // Handle formatting based on sendAs property
     fields.forEach((field: any) => {
       if ((field.type === 'select' || field.type === 'multiselect') && payload[field.key] !== undefined) {
         const value = payload[field.key];
-        if (value !== null && value !== '' && !Array.isArray(value)) {
-          payload[field.key] = [value];
+        const sendAs = field.sendAs || 'array';
+
+        if (sendAs === 'array') {
+          if (value !== null && value !== '' && !Array.isArray(value)) {
+            payload[field.key] = [value];
+          }
+        } else if (sendAs === 'single') {
+          if (Array.isArray(value)) {
+            payload[field.key] = value.length > 0 ? value[0] : null;
+          }
         }
       }
     });

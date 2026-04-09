@@ -68,6 +68,8 @@ export class FacilityEntity extends BaseEntity {
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.SECTORS,
+        hasSelectAll: true,
+        selectAllKey: 'all_sectors',
         dependsOn: 'authority_ids',
       },
       {
@@ -79,6 +81,8 @@ export class FacilityEntity extends BaseEntity {
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
+        hasSelectAll: true,
+        selectAllKey: 'all_governorates',
         dataPath: API_CONFIG.ENDPOINTS.GOVERNORATES,
         dependsOn: 'sector_ids',
       },

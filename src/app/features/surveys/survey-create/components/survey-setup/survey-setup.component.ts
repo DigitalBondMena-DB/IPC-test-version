@@ -7,6 +7,8 @@ import { IFormField } from '@/shared/models/form-field.model';
 import { Validators } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { LucideAngularModule, Settings } from 'lucide-angular';
+import { BaseIdComponent } from '@shared/base/base-id-component';
+import { getCommonRelationalFields } from '@shared/config/common-fields.config';
 
 @Component({
   selector: 'app-survey-setup',
@@ -25,18 +27,21 @@ import { LucideAngularModule, Settings } from 'lucide-angular';
       </div>
 
       <app-b-form-builder
-        [fields]="formFields()"
+        [fields]="fields()"
         [initialData]="initialData()"
         [loading]="isSubmitting()"
         submitLabel="Save"
         cancelLabel="Cancel"
         (formSubmit)="onSubmit($event)"
         (formCancel)="onCancel()"
+        (onSearch)="onDropdownSearch($event)"
+        (onScrollPagination)="onDropdownScroll($event)"
+        (onValueChange)="onValueChange($event)"
       />
     </div>
   `,
 })
-export class SurveySetupComponent implements OnInit {
+export class SurveySetupComponent extends BaseIdComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly surveyService = inject(SurveyService);
@@ -45,31 +50,13 @@ export class SurveySetupComponent implements OnInit {
   readonly settingsIcon = Settings;
 
   id = signal<string | null>(this.route.parent?.snapshot.paramMap.get('id') || null);
-  isSubmitting = signal(false);
-
-  categories = signal<any[]>([]);
-  isLoadingCategories = signal(false);
 
   initialData = signal<any>({});
 
   // Resource for loading existing survey data
   surveyResource = this.id() ? this.surveyService.getSurveyById(this.id()!) : null;
 
-  constructor() {
-    effect(() => {
-      const data = this.surveyResource?.value();
-      if (data) {
-        this.initialData.set({
-          ...data,
-          category_ids: data.categories?.map((c: any) => c.id) || [],
-          weighting_type: data.weighting_type || 'manual',
-          deadline_hours: data.deadline_hours?.toString() || '',
-        });
-      }
-    });
-  }
-
-  formFields = computed<IFormField[]>(() => [
+  rawFields: IFormField[] = [
     {
       key: 'title',
       label: 'Survey Title',
@@ -78,16 +65,7 @@ export class SurveySetupComponent implements OnInit {
       validators: [Validators.required],
       colSpan: 'col-span-1',
     },
-    {
-      key: 'division_ids',
-      label: 'Survey Division',
-      type: 'multiselect',
-      placeholder: 'Select Divisions',
-      options: this.categories().map((c) => ({ label: c.name, value: c.id })),
-      filter: true,
-      loading: this.isLoadingCategories(),
-      colSpan: 'col-span-1',
-    },
+    ...getCommonRelationalFields(),
     {
       key: 'deadline_hours',
       label: 'Deadline (Hours)',
@@ -104,26 +82,34 @@ export class SurveySetupComponent implements OnInit {
       options: [
         { label: 'Weighted', value: 'manual' },
         { label: 'Non-Weighted', value: 'question_count' },
-        { label: 'Non-graded', value: 'question_count' },
+        { label: 'Non-graded', value: 'non_graded' },
       ],
       validators: [Validators.required],
       colSpan: 'col-span-1',
+      sendAs: 'single',
     },
-  ]);
+  ];
 
-  ngOnInit() {
-    this.loadCategories();
+  constructor() {
+    super();
+    this.initDependencies(this.rawFields, this.surveyService);
+    effect(() => {
+      const data = this.surveyResource?.value();
+      if (data) {
+        this.initialData.set({
+          ...data,
+          category_ids: data.categories?.map((c: any) => c.id) || [],
+          weighting_type: data.weighting_type || 'manual',
+          deadline_hours: data.deadline_hours?.toString() || '',
+        });
+      }
+    });
   }
 
-  loadCategories() {
-    this.isLoadingCategories.set(true);
-    this.surveyService.getCategories().subscribe({
-      next: (res) => {
-        this.categories.set(res.data || []);
-        this.isLoadingCategories.set(false);
-      },
-      error: () => this.isLoadingCategories.set(false),
-    });
+  fields = computed(() => this.getAugmentedFields(this.rawFields, !!this.id()));
+
+  override onValueChange(event: { key: string; value: any }) {
+    super.onValueChange(event, this.rawFields);
   }
 
   onSubmit(data: any) {
@@ -138,18 +124,45 @@ export class SurveySetupComponent implements OnInit {
       delete payload.deadline_hours;
     }
 
+    // Standardize select/multiselect and handle "Select All"
+    this.rawFields.forEach((field: any) => {
+      const value = payload[field.key];
+      const sendAs = field.sendAs || 'array';
+
+      if ((field.type === 'select' || field.type === 'multiselect') && value !== undefined) {
+        // Handle formatting based on sendAs property
+        if (sendAs === 'array') {
+          if (value !== null && value !== '' && !Array.isArray(value)) {
+            payload[field.key] = [value];
+          }
+        } else if (sendAs === 'single') {
+          if (Array.isArray(value)) {
+            payload[field.key] = value.length > 0 ? value[0] : null;
+          }
+        }
+
+        // Handle SELECT_ALL
+        if (field.hasSelectAll && field.selectAllKey && Array.isArray(payload[field.key])) {
+          if (payload[field.key].includes('SELECT_ALL')) {
+            delete payload[field.key];
+            payload[field.selectAllKey] = true;
+          }
+        }
+      }
+    });
+
     const obs = this.id()
       ? this.surveyService.updateSurvey(this.id()!, payload)
       : this.surveyService.createSurvey(payload);
 
     obs.subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.messageService.add({ severity: 'success', summary: 'Success', detail: res.message });
         const newId = res.data?.id || this.id();
         this.router.navigate(['/survey/edit', newId, 'preliminary-questions']);
         this.isSubmitting.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isSubmitting.set(false);
         this.messageService.add({
           severity: 'error',
