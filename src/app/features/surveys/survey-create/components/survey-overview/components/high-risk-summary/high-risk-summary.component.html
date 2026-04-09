@@ -2,7 +2,7 @@
     <h3 class="text-lg font-bold text-black-400 mb-6">High-Risk & Notification Summary</h3>
 
     <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar flex flex-col gap-3">
-        @if (summary().alarm_questions?.length) {
+        @if (summary().alarm_questions.length) {
         @for (alarm of summary().alarm_questions; track alarm) {
         <div class="flex items-center justify-between p-3 rounded-lg border border-[#DC2626] bg-[#FFFCFC]">
             <span class="font-medium text-[#7F1D1D]">{{ alarm }}</span>

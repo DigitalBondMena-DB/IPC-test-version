@@ -41,8 +41,6 @@ export class FacilityEntity extends BaseEntity {
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
-        hasSelectAll: true,
-        selectAllKey: 'all_authorities',
         isDisabledWhenEdit: true,
       },
       {

@@ -60,23 +60,23 @@ export abstract class BaseEntity {
   preparePayload(formData: any): any {
     const payload = { ...formData };
 
+    const fields = this.getFormFields(true);
+
+    // Standardize all select/multiselect as arrays
+    fields.forEach((field: any) => {
+      if ((field.type === 'select' || field.type === 'multiselect') && payload[field.key] !== undefined) {
+        const value = payload[field.key];
+        if (value !== null && value !== '' && !Array.isArray(value)) {
+          payload[field.key] = [value];
+        }
+      }
+    });
+
     // Standard parent_id fallback (deepest first)
     if (formData.health_division_id) {
       payload.parent_id = formData.health_division_id;
     } else if (formData.health_directorate_id) {
       payload.parent_id = formData.health_directorate_id;
-    }
-
-    if (payload.category_ids && !Array.isArray(payload.category_ids)) {
-      payload.category_ids = [payload.category_ids];
-    }
-
-    if (payload.authority_ids && !Array.isArray(payload.authority_ids)) {
-      payload.authority_ids = [payload.authority_ids];
-    }
-
-    if (payload.governorate_ids && !Array.isArray(payload.governorate_ids)) {
-      payload.governorate_ids = [payload.governorate_ids];
     }
 
     // Default "Select All" logic handling

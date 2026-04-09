@@ -79,7 +79,7 @@ export class SurveySetupComponent implements OnInit {
       colSpan: 'col-span-1',
     },
     {
-      key: 'category_ids',
+      key: 'division_ids',
       label: 'Survey Division',
       type: 'multiselect',
       placeholder: 'Select Divisions',

@@ -113,6 +113,17 @@ export abstract class BaseUser {
   // Hook for reshaping payload before saving
   preparePayload(formData: any): any {
     const payload = { ...formData };
+    const fields = this.getFormFields(true);
+
+    // Standardize all select/multiselect as arrays
+    fields.forEach((field: any) => {
+      if ((field.type === 'select' || field.type === 'multiselect') && payload[field.key] !== undefined) {
+        const value = payload[field.key];
+        if (value !== null && value !== '' && !Array.isArray(value)) {
+          payload[field.key] = [value];
+        }
+      }
+    });
 
     // Common standard entity extraction for single assignment hierarchy
     if (formData.hospital_id) {
@@ -125,16 +136,6 @@ export abstract class BaseUser {
       payload.entity_id = formData.authority_id;
     }
 
-    if (formData.category_ids) {
-      payload.category_ids = Array.isArray(formData.category_ids)
-        ? formData.category_ids
-        : [formData.category_ids];
-    }
-
-    if (payload.category_ids && !Array.isArray(payload.category_ids)) {
-      payload.category_ids = [payload.category_ids];
-    }
-
     // Clean up temporary internal form UI state references
     const entityKeys = [
       'hospital_id',
@@ -144,6 +145,17 @@ export abstract class BaseUser {
     ];
     entityKeys.forEach((key) => {
       delete payload[key];
+    });
+
+    // Default "Select All" logic handling
+    const rawFields = this.getFormFields(true);
+    rawFields.forEach((field: any) => {
+      if (field.hasSelectAll && field.selectAllKey && Array.isArray(payload[field.key])) {
+        if (payload[field.key].includes('SELECT_ALL')) {
+          delete payload[field.key];
+          payload[field.selectAllKey] = true;
+        }
+      }
     });
 
     Object.keys(payload).forEach((key) => {

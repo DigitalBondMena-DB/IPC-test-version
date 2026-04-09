@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { IFormField } from '@shared/models/form-field.model';
 import { BaseUser } from '../base/base-user';
 import { API_CONFIG } from '@/core/config/api.config';
+import { Validators } from '@angular/forms';
 
 @Injectable()
 export class SuperAdminUser extends BaseUser {
@@ -23,15 +24,17 @@ export class SuperAdminUser extends BaseUser {
   override getRoleFields(isEdit?: boolean): IFormField[] {
     return [
       {
-        key: 'category_ids',
-        label: 'Division',
+        key: 'division_ids',
+        label: 'Division Name',
         type: 'multiselect',
-        placeholder: 'Select Divisions',
-        validators: [],
+        placeholder: 'Select division name...',
+        validators: [Validators.required],
         colSpan: 'col-span-1',
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.DIVISIONS,
+        hasSelectAll: true,
+        selectAllKey: 'all_divisions',
       },
     ];
   }

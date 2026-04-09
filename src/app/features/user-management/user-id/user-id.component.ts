@@ -192,6 +192,10 @@ export class UserIdComponent {
         }
       }
 
+      if (field.hasSelectAll && field.type === 'multiselect' && overrides.options) {
+        overrides.options = [{ label: 'Select All', value: 'SELECT_ALL' }, ...overrides.options];
+      }
+
       let isDisabled = (field.isDisabledWhenEdit && this.isEdit()) || !!field.disabled;
 
       if (field.dependsOn) {

@@ -5,7 +5,7 @@
     </div>
 
     <div class="flex-1 overflow-y-auto pr-1 custom-scrollbar flex flex-col gap-3">
-        @if (logic().rules?.length) {
+        @if (logic().rules.length) {
         @for (rule of logic().rules; track $index) {
         <div class="p-3 rounded-lg border border-blue-100 bg-slate-50 text-sm text-slate-700">
             {{ rule.summary }}

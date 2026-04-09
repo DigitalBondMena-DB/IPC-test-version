@@ -11,7 +11,7 @@
 
   <h2 class="text-[28px] font-semibold text-[#343C6A] mb-6">{{ overview().title }}</h2>
 
-  @if (overview().categories?.length) {
+  @if (overview().categories.length) {
     <div class="flex flex-wrap gap-2 mb-6">
       @for (category of overview().categories; track category) {
         <span
