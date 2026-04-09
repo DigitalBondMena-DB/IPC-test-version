@@ -1,12 +1,10 @@
 import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { BDataTableComponent } from '@shared/components/b-data-table/b-data-table.component';
 import { BPageHeaderComponent } from '@shared/components/b-page-header/b-page-header.component';
 import { EntityManagementService } from '../services/entity-management.service';
-import { Router, ActivatedRoute } from '@angular/router';
-import { map } from 'rxjs';
+import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
-import { ENTITY_TYPE_CONFIG } from '../config/entity-type.config';
+import { BaseEntity } from '../base/base-entity';
 
 @Component({
   selector: 'app-entity-list',
@@ -14,15 +12,15 @@ import { ENTITY_TYPE_CONFIG } from '../config/entity-type.config';
   imports: [BDataTableComponent, BPageHeaderComponent],
   template: `
     <app-b-page-header
-      [title]="config().title"
-      [createButtonLabel]="'Create ' + config().entityLabel"
+      [title]="config.title"
+      [createButtonLabel]="'Create ' + config.entityLabel"
       [showSearch]="true"
       (searchChange)="onSearch($event)"
       (createClick)="onCreate()"
     />
     <div class="px-layout-x">
       <app-b-data-table
-        [columns]="config().columns"
+        [columns]="config.columns"
         [data]="tableData()"
         [totalRecords]="totalRecords()"
         [rows]="tableState().perPage"
@@ -44,14 +42,8 @@ export class EntityListComponent {
   private readonly _Service = inject(EntityManagementService);
   private readonly _MessageService = inject(MessageService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
 
-  readonly type = toSignal(this.route.data.pipe(map((d) => d['type'] as string)), {
-    initialValue: '',
-  });
-  readonly config = computed(
-    () => ENTITY_TYPE_CONFIG[this.type()] || ENTITY_TYPE_CONFIG['NOT_FOUND'],
-  );
+  readonly config = inject(BaseEntity);
 
   tableState = signal({
     page: 1,
@@ -76,22 +68,22 @@ export class EntityListComponent {
   });
 
   resource = this._Service.getEntities(
-    () => this.config().endpoint,
-    () => this.config().entity_type,
+    () => this.config.endpoint,
+    () => this.config.entity_type,
     this.params,
-    () => this.config().parent_type,
+    () => this.config.parent_type,
   );
 
   tableData = computed(() => {
-    console.log(this.resource.value());
-
     if (this.resource.error()) return [];
     return this.resource.value()?.data ?? [];
   });
+  
   totalRecords = computed(() => {
     if (this.resource.error()) return 0;
     return this.resource.value()?.total ?? 0;
   });
+  
   isLoading = computed(() => this.resource.isLoading());
   hasError = computed(() => !!this.resource.error());
 
@@ -117,7 +109,7 @@ export class EntityListComponent {
 
   onToggle(event: { item: any }): void {
     this._Service
-      .toggleEntity(this.config().endpoint, this.config().entity_type, event.item.id)
+      .toggleEntity(this.config.endpoint, this.config.entity_type, event.item.id)
       .subscribe({
         next: (res: any) => {
           const isActive = res.data.is_active;
@@ -139,10 +131,10 @@ export class EntityListComponent {
   }
 
   onEdit(item: any): void {
-    this.router.navigate([this.config().navPath, 'edit', item.id]);
+    this.router.navigate([this.config.navPath, 'edit', item.id]);
   }
 
   onCreate(): void {
-    this.router.navigate([this.config().navPath, 'create']);
+    this.router.navigate([this.config.navPath, 'create']);
   }
 }

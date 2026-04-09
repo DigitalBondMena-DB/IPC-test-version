@@ -7,11 +7,11 @@ interface Data {
 }
 interface Counts {
   users: number;
-  categories: number;
-  governorates: number;
   surveys: number;
-  medical_areas: number;
-  hospitals: number;
+  divisions: number;
+  authorities: number;
+  sectors: number;
+  facilities: number;
 }
 interface Statistics {
   inspections_completed: number;

@@ -3,21 +3,22 @@ import { HomeService } from '../services/home.service';
 import { IHomeResponse } from '../interfaces/home';
 import { HttpResourceRef } from '@angular/common/http';
 import { HomeSkeletonComponent } from '../components/home-skeleton/home-skeleton.component';
-import { TopBarBreadcrumbComponent } from '@/core/layout/main-layout/components/top-bar/top-bar.component';
-import { BPageHeaderComponent } from "@/shared/components/b-page-header/b-page-header.component";
+import { BPageHeaderComponent } from '@/shared/components/b-page-header/b-page-header.component';
 
 @Component({
   selector: 'app-home-page',
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [HomeSkeletonComponent, TopBarBreadcrumbComponent, BPageHeaderComponent],
+  imports: [HomeSkeletonComponent, BPageHeaderComponent],
 })
 export class HomePageComponent {
   private homeService = inject(HomeService);
   private homeResponse: HttpResourceRef<IHomeResponse | undefined> = this.homeService.getHomeData();
 
   counts = computed(() => this.homeResponse.value()?.data.counts);
+  isLoading = computed(() => this.homeResponse.isLoading());
+
   reportCards = computed(() => [
     {
       title: 'Total Users',
@@ -39,7 +40,7 @@ export class HomePageComponent {
     },
     {
       title: 'Total Divisions',
-      value: this.counts()?.categories,
+      value: this.counts()?.divisions,
       image: {
         src: '/assets/images/home/total-divisions.png',
         width: 153,
@@ -47,8 +48,8 @@ export class HomePageComponent {
       },
     },
     {
-      title: 'Health Directorates',
-      value: this.counts()?.governorates,
+      title: 'Total Authorities',
+      value: this.counts()?.authorities,
       image: {
         src: '/assets/images/home/health-directorates.png',
         width: 126,
@@ -57,8 +58,8 @@ export class HomePageComponent {
     },
 
     {
-      title: 'Total Health Organizations',
-      value: this.counts()?.medical_areas,
+      title: 'Total Sectors',
+      value: this.counts()?.sectors,
       image: {
         src: '/assets/images/home/total-health-org.png',
         width: 91,
@@ -66,8 +67,8 @@ export class HomePageComponent {
       },
     },
     {
-      title: 'Total Hospitals',
-      value: this.counts()?.hospitals,
+      title: 'Total Facilities',
+      value: this.counts()?.facilities,
       image: {
         src: '/assets/images/home/total-hospitals.png',
         width: 139,
@@ -75,5 +76,4 @@ export class HomePageComponent {
       },
     },
   ]);
-  isLoading = computed(() => this.homeResponse.isLoading());
 }

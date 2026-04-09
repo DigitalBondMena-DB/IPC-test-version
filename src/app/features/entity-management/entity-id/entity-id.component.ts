@@ -12,8 +12,7 @@ import { BPageHeaderComponent } from '@shared/components/b-page-header/b-page-he
 import { BFormBuilderComponent } from '@shared/components/b-form-builder/b-form-builder.component';
 import { EntityManagementService } from '../services/entity-management.service';
 import { MessageService } from 'primeng/api';
-import { ENTITY_TYPE_CONFIG } from '../config/entity-type.config';
-import { API_CONFIG } from '@/core/config/api.config';
+import { BaseEntity } from '../base/base-entity';
 
 @Component({
   selector: 'app-entity-id',
@@ -28,15 +27,13 @@ export class EntityIdComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
+  readonly config = inject(BaseEntity);
+
   readonly id = signal<string | null>(this.route.snapshot.paramMap.get('id'));
-  readonly type = signal<string>(this.route.snapshot.data['type']);
-  readonly config = computed(
-    () => ENTITY_TYPE_CONFIG[this.type()] || ENTITY_TYPE_CONFIG['NOT_FOUND'],
-  );
   readonly isEdit = computed(() => !!this.id());
 
   readonly title = computed(
-    () => `${this.isEdit() ? 'Edit ' : 'Create '} ${this.config().entityLabel}`,
+    () => `${this.isEdit() ? 'Edit ' : 'Create '} ${this.config.entityLabel}`,
   );
   readonly submitLabel = computed(() => `${this.isEdit() ? 'Save Changes ' : 'Create '}`);
 
@@ -44,60 +41,22 @@ export class EntityIdComponent {
 
   // Entity data for editing
   entityResource = this._Service.getEntityById(
-    () => this.config().endpoint,
-    () => this.config().entity_type,
+    () => this.config.endpoint,
+    () => this.config.entity_type,
     () => this.id(),
   );
+  
   entityData = computed(() => {
     const data = this.entityResource?.value();
-    return this.transformEntityData(data);
-  });
-  isLoading = computed(() => (this.entityResource ? this.entityResource.isLoading() : false));
-  private setParentIds(transformed: any, data: any): any {
-    const type = (data?.type || this.config()?.entity_type)?.toUpperCase();
-    const parentType = (data?.parent?.type || this.config()?.entity_type)?.toUpperCase();
-    if (type === 'HOSPITAL' && parentType === 'AUTHORITY') {
-      transformed.authority_ids = Array.isArray(data.parent_id)
-        ? data.parent_id
-        : data.parent_id
-          ? [data.parent_id]
-          : [];
-    } else if (type === 'HOSPITAL') {
-      transformed.health_division_id = data.parent_id;
-      if (data.parent) {
-        transformed.health_directorate_id = data.parent.parent_id;
-      }
-    } else if (type === 'MEDICAL_AREA' || type === 'SECTORS') {
-      transformed.health_directorate_id = data.parent_id;
-    }
-  }
-  private transformEntityData(data: any): any {
     if (!data) return {};
-    const transformed = { ...data };
-    this.setParentIds(transformed, data);
-    if (data.categories && Array.isArray(data.categories)) {
-      transformed.category_ids = data.categories.map((c: any) => c.id);
-    }
-    if (data.authorities && Array.isArray(data.authorities)) {
-      transformed.authority_ids = data.authorities.map((a: any) => a.id);
-    } else if (data.authority_id) {
-      transformed.authority_ids = [data.authority_id];
-    } else if (data.authority && data.authority.id) {
-      transformed.authority_ids = [data.authority.id];
-    }
-
-    if (data.governorates && Array.isArray(data.governorates)) {
-      transformed.governorate_ids = data.governorates.map((g: any) => g.id);
-    } else if (data.governorate_id) {
-      transformed.governorate_ids = [data.governorate_id];
-    }
-
+    const transformed = this.config.transformResponse(data);
     setTimeout(() => {
       this.formValues.set({ ...transformed });
     });
-
     return transformed;
-  }
+  });
+  
+  isLoading = computed(() => (this.entityResource ? this.entityResource.isLoading() : false));
 
   // Relational data management
   private depsState = signal<
@@ -117,17 +76,17 @@ export class EntityIdComponent {
   }
 
   private initDependencies(): void {
-    const deps = this.config().dependencies || [];
+    const deps = this.config.dependencies || [];
     const state: any = {};
 
     deps.forEach((dep: string) => {
-      const depConfig = this.getDepConfig(dep);
+      const depConfig = this.config.getDependencyConfig(dep);
       const searchTerm = signal('');
       const page = signal(1);
 
       const endpoint = computed(() => {
         const values = this.formValues();
-        const fieldsConfig = this.config().formFields(deps);
+        const fieldsConfig = this.config.getFormFields(deps);
         const fieldDef = fieldsConfig.find((f: any) => f.key === depConfig.key);
 
         if (!fieldDef) return null;
@@ -177,17 +136,6 @@ export class EntityIdComponent {
     this.depsState.set(state);
   }
 
-  private getDepConfig(dep: string): { key: string } {
-    const mapping: Record<string, any> = {
-      directorates: { key: 'health_directorate_id' },
-      healthDivisions: { key: 'health_division_id' },
-      generalDivisions: { key: 'category_ids' },
-      authorities: { key: 'authority_ids' },
-      governorates: { key: 'governorate_ids' },
-    };
-    return mapping[dep] || { key: dep };
-  }
-
   fields = computed(() => {
     const s = this.depsState();
     const deps: any = {};
@@ -200,15 +148,15 @@ export class EntityIdComponent {
       if (res && state.page() < res.last_page) {
         options.push({ label: null, value: null });
       }
-      // Map component-internal key back to config expected key (e.g., 'health_directorate_id' -> 'directorates')
-      const configKey = this.getConfigKeyFromProp(key);
+      
+      const configKey = this.config.getConfigKeyFromProp(key);
       deps[configKey] = options;
       deps[`is${configKey?.charAt(0)?.toUpperCase() + configKey.slice(1)}Loading`] =
         state.resource.isLoading();
     });
 
     const values = this.formValues();
-    const rawFields = this.config().formFields(deps);
+    const rawFields = this.config.getFormFields(deps);
 
     return rawFields.map((field: any) => {
       // Add "Select All" option if enabled
@@ -230,21 +178,10 @@ export class EntityIdComponent {
     });
   });
 
-  private getConfigKeyFromProp(prop: string): string {
-    const mapping: Record<string, string> = {
-      health_directorate_id: 'directorates',
-      health_division_id: 'healthDivisions',
-      category_ids: 'generalDivisions',
-      authority_ids: 'authorities',
-      governorate_ids: 'governorates',
-    };
-    return mapping[prop] || prop;
-  }
-
   isSubmitting = signal(false);
 
   onValueChange(event: { key: string; value: any }) {
-    const fields = this.config().formFields({});
+    const fields = this.config.getFormFields({});
 
     const clearDependents = (key: string, valuesObj: any) => {
       fields.forEach((f: any) => {
@@ -256,7 +193,6 @@ export class EntityIdComponent {
     };
 
     this.formValues.update((prev) => {
-      // Avoid infinite loop or redundant updates if value is same
       if (prev[event.key] === event.value) return prev;
 
       const newValues = { ...prev, [event.key]: event.value };
@@ -264,11 +200,10 @@ export class EntityIdComponent {
       return newValues;
     });
 
-    // Reset page and accumulated data for dependencies that depend on this key or its children
     const resetState = (key: string) => {
       const state = this.depsState();
       Object.keys(state).forEach((k) => {
-        const configKeyForState = this.getConfigKeyFromProp(k);
+        const configKeyForState = this.config.getConfigKeyFromProp(k);
         const fieldDef = fields.find((f: any) => f.key === configKeyForState);
 
         if (fieldDef?.dependsOn === key) {
@@ -306,20 +241,21 @@ export class EntityIdComponent {
 
   onSubmit(formData: any): void {
     this.isSubmitting.set(true);
-    const payload = this.preparePayload(formData);
+    const payload = this.config.preparePayload(formData);
+    
     const obs = this.isEdit()
       ? this._Service.updateEntity(
-          this.config().endpoint,
-          this.config().entity_type,
+          this.config.endpoint,
+          this.config.entity_type,
           this.id()!,
           payload,
         )
-      : this._Service.createEntity(this.config().endpoint, this.config().entity_type, payload);
+      : this._Service.createEntity(this.config.endpoint, this.config.entity_type, payload);
 
     obs.subscribe({
       next: () => {
         this._MessageService.add({ summary: 'Success', detail: 'Saved successfully' });
-        this.router.navigate([this.config().navPath]);
+        this.router.navigate([this.config.navPath]);
       },
       error: (err) => {
         this.isSubmitting.set(false);
@@ -332,49 +268,7 @@ export class EntityIdComponent {
     });
   }
 
-  private preparePayload(formData: any): any {
-    const payload = { ...formData };
-
-    // Extract parent_id based on priority (deepest first)
-    if (formData.health_division_id) {
-      payload.parent_id = formData.health_division_id;
-    } else if (formData.health_directorate_id) {
-      payload.parent_id = formData.health_directorate_id;
-    }
-
-    // Handle category_ids (General Division)
-    if (payload.category_ids && !Array.isArray(payload.category_ids)) {
-      payload.category_ids = [payload.category_ids];
-    }
-
-    // Handle "Select All" transformations
-    const rawFields = this.config().formFields({});
-    rawFields.forEach((field: any) => {
-      if (field.hasSelectAll && field.selectAllKey && Array.isArray(payload[field.key])) {
-        if (payload[field.key].includes('SELECT_ALL')) {
-          delete payload[field.key];
-          payload[field.selectAllKey] = true;
-        }
-      }
-    });
-
-    if (payload.authority_ids && !Array.isArray(payload.authority_ids)) {
-      payload.authority_ids = [payload.authority_ids];
-    }
-
-    // Handle remaining governorate_ids (if not Select All)
-    if (payload.governorate_ids && !Array.isArray(payload.governorate_ids)) {
-      payload.governorate_ids = [payload.governorate_ids];
-    }
-
-    // Cleanup intermediate keys
-    const entityKeys = ['health_division_id', 'health_directorate_id', 'division_id'];
-    entityKeys.forEach((key) => delete payload[key]);
-
-    return payload;
-  }
-
   onCancel(): void {
-    this.router.navigate([this.config().navPath]);
+    this.router.navigate([this.config.navPath]);
   }
 }

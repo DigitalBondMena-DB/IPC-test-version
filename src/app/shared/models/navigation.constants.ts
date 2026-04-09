@@ -8,11 +8,15 @@ export interface SidebarFooterConfig {
 export const ALL_MENU_ITEMS: NavItem[] = [
   { label: 'User Management', icon: 'Dashboard', isSection: true },
   { label: 'Overview', routerLink: '/dashboard' },
-  { label: 'Divisions', roles: ['super_admin'], routerLink: '/dashboard/divisions' },
-  { label: 'Governorates', roles: ['super_admin'], routerLink: '/dashboard/governorates' },
-  { label: 'Sectors', roles: ['super_admin'], routerLink: '/dashboard/sectors' },
-  { label: 'Authority', routerLink: '/dashboard/authorities' },
-  { label: 'Facilities', routerLink: '/dashboard/facilities' },
+  { label: 'Divisions', roles: ['super_admin', 'authority'], routerLink: '/dashboard/divisions' },
+  {
+    label: 'Governorates',
+    roles: ['super_admin', 'authority'],
+    routerLink: '/dashboard/governorates',
+  },
+  { label: 'Sectors', roles: ['super_admin', 'authority'], routerLink: '/dashboard/sectors' },
+  { label: 'Authority', routerLink: '/dashboard/authorities', roles: ['super_admin'] },
+  { label: 'Facilities', routerLink: '/dashboard/facilities', roles: ['super_admin', 'authority'] },
   {
     label: 'User Management',
     expanded: false,
@@ -20,23 +24,23 @@ export const ALL_MENU_ITEMS: NavItem[] = [
       { label: 'Super Admin', roles: ['super_admin'], routerLink: '/dashboard/super-admin-users' },
       {
         label: 'Authority',
-        roles: ['super_admin', 'authority', 'authority'],
+        roles: ['super_admin', 'authority'],
         routerLink: '/dashboard/authorities-users',
       },
       {
-        label: 'Governorates',
-        roles: ['super_admin', 'governorate'],
-        routerLink: '/dashboard/governorates-users',
+        label: 'Sectors',
+        roles: ['super_admin', 'governorate', 'authority'],
+        routerLink: '/dashboard/sectors-users',
       },
       {
-        label: 'Sectors',
-        roles: ['super_admin', 'governorate'],
-        routerLink: '/dashboard/sectors-users',
+        label: 'Governorates',
+        roles: ['super_admin', 'governorate', 'authority'],
+        routerLink: '/dashboard/governorates-users',
       },
 
       {
         label: 'Facilities',
-        roles: ['super_admin', 'authority'],
+        roles: ['super_admin', 'authority', 'authority'],
         routerLink: '/dashboard/facilities-users',
       },
     ],
