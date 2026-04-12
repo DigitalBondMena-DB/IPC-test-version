@@ -59,6 +59,7 @@ export class BPageHeaderComponent {
   isAuthorizedToCreate = computed(() => {
     const role = this.userRole();
     const allowedRoles = this.createButtonRoles();
+    console.log(allowedRoles);
 
     if (allowedRoles.length === 0) return true;
     if (!allowedRoles.includes(role)) return false;

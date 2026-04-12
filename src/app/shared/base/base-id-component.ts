@@ -1,6 +1,7 @@
 import { inject, signal, computed, effect, Signal, WritableSignal } from '@angular/core';
 import { IFormField } from '@shared/models/form-field.model';
 import { HttpResourceRef } from '@angular/common/http';
+import { AuthService } from '@/core/services/auth.service';
 
 export interface IBaseDataService {
   get<T>(
@@ -10,6 +11,8 @@ export interface IBaseDataService {
 }
 
 export abstract class BaseIdComponent {
+  protected readonly _AuthService = inject(AuthService);
+
   // Common signals used across all form-based management components
   readonly formValues = signal<Record<string, any>>({});
   readonly isSubmitting = signal(false);
@@ -35,16 +38,28 @@ export abstract class BaseIdComponent {
   protected initDependencies(fields: IFormField[], service: IBaseDataService): void {
     const state: any = {};
 
+    const userRole = this._AuthService.role();
     fields
       .filter((f) => f.dataPath)
       .forEach((field) => {
+        // Skip API initialization for fields the user cannot see
+        if (field.roles && field.roles.length > 0 && !field.roles.includes(userRole)) {
+          return;
+        }
+
         const searchTerm = signal('');
         const page = signal(1);
+
+        // Check if the parent field is hidden from this user by roles
+        const parentFieldDef = field.dependsOn ? fields.find((f) => f.key === field.dependsOn) : null;
+        const isParentHidden = parentFieldDef?.roles && parentFieldDef.roles.length > 0 && !parentFieldDef.roles.includes(userRole);
 
         // Isolated dependency signal for the parent field
         const parentValue = computed(
           () => {
             if (!field.dependsOn) return undefined;
+            // If the parent field is hidden by roles, the backend handles scoping via auth token
+            if (isParentHidden) return '__IMPLICIT__';
             const values = this.formValues();
             return values[field.dependsOn];
           },
@@ -73,7 +88,8 @@ export abstract class BaseIdComponent {
 
             if (field.dependsOn) {
               const val = parentValue();
-              if (val) {
+              // Don't add parent params if the parent is implicitly resolved (hidden by roles)
+              if (val && val !== '__IMPLICIT__') {
                 const isSelectAll = Array.isArray(val)
                   ? val.includes('SELECT_ALL')
                   : val === 'SELECT_ALL';
@@ -157,16 +173,23 @@ export abstract class BaseIdComponent {
       // Disabled state logic (edit mode or parent dependency)
       let isDisabled = (field.isDisabledWhenEdit && isEdit) || !!field.disabled;
       if (field.dependsOn) {
-        const parentValue = values[field.dependsOn];
-        const hasParentValue = parentValue && (!Array.isArray(parentValue) || parentValue.length > 0);
-        
-        // Disable if parent is not selected OR if loading finished and no items were found (while NOT searching)
-        const noDataFound = s[field.key] && 
-                           !s[field.key].resource.isLoading() && 
-                           s[field.key].accumulated().filter((e: any) => e.is_active !== false).length === 0 && 
-                           !s[field.key].searchTerm();
-        
-        isDisabled = isDisabled || !hasParentValue || noDataFound;
+        // Check if the parent field is hidden by roles — if so, skip parent-based disabling
+        const userRole = this._AuthService.role();
+        const parentFieldDef = rawFields.find((f) => f.key === field.dependsOn);
+        const isParentHidden = parentFieldDef?.roles && parentFieldDef.roles.length > 0 && !parentFieldDef.roles.includes(userRole);
+
+        if (!isParentHidden) {
+          const parentValue = values[field.dependsOn];
+          const hasParentValue = parentValue && (!Array.isArray(parentValue) || parentValue.length > 0);
+          
+          // Disable if parent is not selected OR if loading finished and no items were found (while NOT searching)
+          const noDataFound = s[field.key] && 
+                             !s[field.key].resource.isLoading() && 
+                             s[field.key].accumulated().filter((e: any) => e.is_active !== false).length === 0 && 
+                             !s[field.key].searchTerm();
+          
+          isDisabled = isDisabled || !hasParentValue || noDataFound;
+        }
       }
 
       return {
@@ -213,6 +236,8 @@ export abstract class BaseIdComponent {
 
     resetState(event.key);
   }
+
+
 
   onDropdownSearch(event: { key: string; text: string }) {
     const state = this.depsState()[event.key];
