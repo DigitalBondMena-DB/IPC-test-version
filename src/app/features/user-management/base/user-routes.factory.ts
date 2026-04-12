@@ -7,13 +7,11 @@ export function createUserRoutes(
   path: string,
   userClass: Type<BaseUser>,
   extraData: any = {},
-  canMatch: any[] = []
+  canMatch: any[] = [],
 ): any {
   return {
     path,
-    providers: [
-      { provide: BaseUser, useClass: userClass }
-    ],
+    providers: [{ provide: BaseUser, useClass: userClass }],
     ...(canMatch.length ? { canMatch } : {}),
     ...(Object.keys(extraData).length ? { data: extraData } : {}),
     children: [

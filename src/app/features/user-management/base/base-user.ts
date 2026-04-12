@@ -61,7 +61,9 @@ export abstract class BaseUser {
         label: 'Password',
         type: 'password',
         placeholder: '********',
-        validators: isEdit ? [Validators.minLength(8)] : [Validators.required, Validators.minLength(8)],
+        validators: isEdit
+          ? [Validators.minLength(8)]
+          : [Validators.required, Validators.minLength(8)],
         colSpan: 'col-span-1',
       },
       {
@@ -131,7 +133,10 @@ export abstract class BaseUser {
 
     // Handle formatting based on sendAs property
     fields.forEach((field: any) => {
-      if ((field.type === 'select' || field.type === 'multiselect') && payload[field.key] !== undefined) {
+      if (
+        (field.type === 'select' || field.type === 'multiselect') &&
+        payload[field.key] !== undefined
+      ) {
         const value = payload[field.key];
         const sendAs = field.sendAs || 'array';
 

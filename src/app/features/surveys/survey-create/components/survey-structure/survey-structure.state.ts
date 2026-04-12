@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MessageService, TreeNode } from 'primeng/api';
 import { SurveyService } from '@features/surveys/services/survey.service';
+import { debounceTime } from 'rxjs';
 
 @Injectable()
 export class SurveyStructureStateService {
@@ -90,7 +91,7 @@ export class SurveyStructureStateService {
     return this.structureForm.get('domains') as FormArray;
   }
 
-  private formValue = toSignal(this.structureForm.valueChanges);
+  private formValue = toSignal(this.structureForm.valueChanges.pipe(debounceTime(150)));
 
   readonly isStructureValid = computed(() => {
     this.formValue();
@@ -456,8 +457,9 @@ export class SurveyStructureStateService {
   private mapFormGroupToTreeNode(node: FormGroup, breadcrumbs: string[], level: number): TreeNode {
     const subdomains = this.getSubdomains(node);
     const title = node.get('title')?.value || 'Untitled';
+    const id = node.get('id')?.value;
     const treeNode: TreeNode & { searchTitle?: string } = {
-      key: `node_${title}_${level}_${Math.random().toString(36).substring(7)}`,
+      key: id ? `node_${id}` : `node_level_${level}_${title}_${Math.random().toString(36).substring(7)}`,
       label: title,
       data: { formGroup: node, breadcrumbs },
       selectable: subdomains.length === 0,

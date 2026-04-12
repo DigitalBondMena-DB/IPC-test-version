@@ -1,4 +1,11 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal, effect } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  computed,
+  inject,
+  signal,
+  effect,
+} from '@angular/core';
 import { BDataTableComponent } from '@shared/components/b-data-table/b-data-table.component';
 import { BPageHeaderComponent } from '@shared/components/b-page-header/b-page-header.component';
 import { UserManagementService } from '../services/user-management.service';
@@ -85,12 +92,12 @@ export class UserListComponent {
   }
 
   tableData = computed(() => this.localData());
-  
+
   totalRecords = computed(() => {
     if (this.resource.error()) return 0;
     return this.resource.value()?.total ?? 0;
   });
-  
+
   isLoading = computed(() => this.resource.isLoading());
   hasError = computed(() => this.resource.error() !== undefined);
 
@@ -155,4 +162,3 @@ export class UserListComponent {
     this.router.navigate([this.config.navPath, 'create']);
   }
 }
-

@@ -46,18 +46,18 @@ export const ALL_MENU_ITEMS: NavItem[] = [
     ],
   },
 
-  { label: 'Survey Builder', roles: ['super_admin'], icon: 'Survey', isSection: true },
+  { label: 'Survey Builder', roles: ['super_admin', 'authority'], icon: 'Survey', isSection: true },
   {
     label: 'New Survey',
-    roles: ['super_admin'],
+    roles: ['super_admin', 'authority'],
     icon: 'Plus',
     routerLink: '/survey/create/setup',
     isButton: true,
   },
-  { label: 'Surveys', roles: ['super_admin'], routerLink: '/survey' },
+  { label: 'Surveys', roles: ['super_admin', 'authority'], routerLink: '/survey' },
   {
     label: 'Conditional logic',
-    roles: ['super_admin'],
+    roles: ['super_admin', 'authority'],
     routerLink: '/survey/conditional-logic/review',
   },
 
