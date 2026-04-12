@@ -202,7 +202,7 @@ export class LogicFormComponent implements OnInit {
 
     if (form.invalid) {
       form.markAllAsTouched();
-      this.formUpdateVersion.update(v => v + 1);
+      this.formUpdateVersion.update((v) => v + 1);
       return of(null);
     }
 
@@ -216,8 +216,8 @@ export class LogicFormComponent implements OnInit {
           const savedId = res?.data?.id || res?.id || ruleId;
           form.patchValue({ id: savedId, isEditing: false });
           form.disable();
-          
-          this.state.editingIds.update(set => {
+
+          this.state.editingIds.update((set) => {
             const newSet = new Set(set);
             newSet.delete(ruleId || `temp_${index}`);
             newSet.delete(savedId);
@@ -228,9 +228,18 @@ export class LogicFormComponent implements OnInit {
           this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Rule saved' });
           this.state.surveyResource.reload();
         },
-        error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to save rule' })
-      })
+        error: () =>
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to save rule',
+          }),
+      }),
     );
+  }
+
+  onSaveRule(index: number) {
+    this.saveRule(index).subscribe();
   }
 
   private saveAllActiveRules(): Observable<boolean> {

@@ -1,10 +1,19 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy, effect } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  ChangeDetectionStrategy,
+  effect,
+  computed,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, RouterModule } from '@angular/router';
 import { LucideAngularModule, GitFork, Plus } from 'lucide-angular';
 import { ConditionalLogicStateService } from './conditional-logic.state';
 import { Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map, startWith } from 'rxjs';
 
 @Component({
   selector: 'app-conditional-logic',
@@ -21,6 +30,16 @@ export class ConditionalLogicComponent implements OnInit {
 
   readonly GitForkIcon = GitFork;
   readonly PlusIcon = Plus;
+  readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((event: any) => event instanceof NavigationEnd),
+      map(() => this.router.url),
+      startWith(this.router.url),
+    ),
+  );
+  readonly isReviewPage = computed(() => {
+    return this.currentUrl()?.includes('/review');
+  });
 
   constructor() {
     let currentRoute: ActivatedRoute | null = this.route;

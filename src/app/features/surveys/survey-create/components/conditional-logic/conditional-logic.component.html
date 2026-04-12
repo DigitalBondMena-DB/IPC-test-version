@@ -14,14 +14,16 @@
         </div>
       </div>
 
-      <button
-        type="button"
-        class="flex items-center gap-2 bg-primary-500 text-white px-6 py-2.5 rounded-xl hover:bg-primary-600 transition-all font-medium text-sm shadow-sm active:scale-95"
-        (click)="onAddLogic()"
-      >
-        <lucide-angular [img]="PlusIcon" class="w-4 h-4"></lucide-angular>
-        Add Conditional Logic
-      </button>
+      @if (isReviewPage()) {
+        <button
+          type="button"
+          class="flex items-center gap-2 bg-primary-500 text-white px-6 py-2.5 rounded-xl hover:bg-primary-600 transition-all font-medium text-sm shadow-sm active:scale-95"
+          (click)="onAddLogic()"
+        >
+          <lucide-angular [img]="PlusIcon" class="w-4 h-4"></lucide-angular>
+          Add Conditional Logic
+        </button>
+      }
     </div>
 
     <!-- Sub-routes content (Review or Form) -->

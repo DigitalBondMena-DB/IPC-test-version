@@ -56,6 +56,20 @@ export class BPageHeaderComponent {
   userRole = computed(() => {
     return this._AuthService.role();
   });
+  isAuthorizedToCreate = computed(() => {
+    const role = this.userRole();
+    const allowedRoles = this.createButtonRoles();
+
+    if (allowedRoles.length === 0) return true;
+    if (!allowedRoles.includes(role)) return false;
+
+    // Special case for authority: only allow if they have full access
+    if (role === 'authority') {
+      return this._AuthService.hasFullAccess();
+    }
+
+    return true;
+  });
   userLogoResource = this._SideBarService.getIcon();
   userLogo = computed(() => {
     return this.userLogoResource.value();

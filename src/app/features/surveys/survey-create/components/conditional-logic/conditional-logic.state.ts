@@ -249,9 +249,9 @@ export class ConditionalLogicStateService {
     return group;
   }
 
-  getQuestionOptions(questionId: number | null): any[] {
+  getQuestionOptions(questionId: number | string | null): any[] {
     if (!questionId) return [];
-    const q = this.questionsMap().get(questionId);
+    const q = this.questionsMap().get(Number(questionId));
     if (!q || !q.meta_data || !q.meta_data.options) return [];
     return q.meta_data.options.map((opt: string) => ({ label: opt, value: opt }));
   }

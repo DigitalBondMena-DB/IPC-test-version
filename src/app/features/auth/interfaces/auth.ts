@@ -16,4 +16,7 @@ export interface IUser {
   entity_type: string;
   is_supervisor: boolean;
   role: Role;
+  authority?: {
+    has_full_access: boolean;
+  };
 }

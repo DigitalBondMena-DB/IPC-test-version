@@ -12,6 +12,7 @@ export class AuthService {
   private _userData = signal<ILoginResponse | null>(null);
   public userData = this._userData.asReadonly();
   public role = computed<Role>(() => this._userData()?.user.role as Role);
+  public hasFullAccess = computed(() => !!this._userData()?.user.authority?.has_full_access);
   isAuthenticated = computed(() => !!this._userData()?.token);
   constructor() {
     this.initializeFromStorage();

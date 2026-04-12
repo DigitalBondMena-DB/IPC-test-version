@@ -59,11 +59,11 @@
                 >
                   <lucide-angular [img]="EditIcon" class="w-5 h-5"></lucide-angular>
                 </button>
-              } @else if (vm.form.get('id')?.value) {
+              } @else if (vm.form.get('id')?.value || vm.form.dirty) {
                 <button
                   type="button"
                   class="flex items-center gap-2 text-white bg-primary-500 hover:bg-primary-600 px-4 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all transform active:scale-95"
-                  (click)="saveRule(vm.index)"
+                  (click)="onSaveRule(vm.index)"
                 >
                   <lucide-angular [img]="CheckIcon" class="w-4 h-4"></lucide-angular>
                   Save Rule
