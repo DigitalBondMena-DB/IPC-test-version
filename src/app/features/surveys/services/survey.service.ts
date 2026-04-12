@@ -45,4 +45,12 @@ export class SurveyService extends HttpService {
   getCategories(): Observable<any> {
     return this.http.get<any>(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DIVISIONS}`);
   }
+
+  toggleDomainNa(id: string | number): Observable<any> {
+    return this.post<any>(`${API_CONFIG.ENDPOINTS.SURVEYS.DOMAINS}/${id}/toggle-na`, {});
+  }
+
+  duplicateDomain(id: string | number): Observable<any> {
+    return this.post<any>(`${API_CONFIG.ENDPOINTS.SURVEYS.DOMAINS}/${id}/duplicate`, {});
+  }
 }

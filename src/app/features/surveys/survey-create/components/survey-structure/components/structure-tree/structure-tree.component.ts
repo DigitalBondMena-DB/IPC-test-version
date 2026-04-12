@@ -85,6 +85,10 @@ export class StructureTreeComponent {
     this.state.syncDomains();
   }
 
+  toggleDomainNa(node: FormGroup) {
+    this.state.toggleDomainNa(node);
+  }
+
   canAddSubdomain(node: FormGroup): boolean {
     return this.state.canAddSubdomain(node);
   }
@@ -125,7 +129,7 @@ export class StructureTreeComponent {
     return badge;
   }
   onDuplicate(node: FormGroup, level: number, index: number) {
-    // Placeholder function for domain/subdomain duplication
-    console.log(`Duplicate requested for level ${level}, index ${index}`);
+    const id = node.get('id')?.value;
+    this.state.duplicateDomain(id);
   }
 }

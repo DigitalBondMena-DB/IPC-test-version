@@ -15,7 +15,7 @@ export class SurveyStructureStateService {
 
   readonly surveyId = signal<string | null>(null);
   readonly isLoaded = signal(false);
-  readonly weightingType = signal<'manual' | 'question_count'>('question_count');
+  readonly weightingType = signal<'manual' | 'question_count' | 'non_graded'>('question_count');
   readonly surveyName = signal('');
 
   // Track context for adding question
@@ -47,7 +47,7 @@ export class SurveyStructureStateService {
     });
     return nodes;
   });
-  
+
   readonly selectedGradedTreeNode = signal<any>(null);
 
   private lastSyncedSnapshot: any[] = [];
@@ -71,21 +71,18 @@ export class SurveyStructureStateService {
       this.surveyId.set(foundId);
       this.surveyResource = this.surveyService.getSurveyById(foundId);
 
-      effect(
-        () => {
-          const data = this.surveyResource?.value();
-          if (data) {
-            this.weightingType.set(data.weighting_type || 'question_count');
-            this.surveyName.set(data.title);
-            if (data.domains && data.domains.length > 0) {
-              this.patchDomains(data.domains);
-              this.lastSyncedSnapshot = structuredClone(this.domains.getRawValue());
-            }
-            this.isLoaded.set(true);
+      effect(() => {
+        const data = this.surveyResource?.value();
+        if (data) {
+          this.weightingType.set(data.weighting_type || 'question_count');
+          this.surveyName.set(data.title);
+          if (data.domains && data.domains.length > 0) {
+            this.patchDomains(data.domains);
+            this.lastSyncedSnapshot = structuredClone(this.domains.getRawValue());
           }
-        },
-        { allowSignalWrites: true },
-      );
+          this.isLoaded.set(true);
+        }
+      });
     }
   }
 
@@ -136,7 +133,7 @@ export class SurveyStructureStateService {
       weight: [data.weight || 1],
       isExpanded: [data.isExpanded !== undefined ? data.isExpanded : true],
       lastTitle: [data.lastTitle !== undefined ? data.lastTitle : titleValue],
-      is_na: [data.is_na || false],
+      allow_na: [data.allow_na ?? data.is_na ?? false],
       questions: this.fb.array((data.questions || []).map((q: any) => this.fb.group(q))),
       sub_domains: this.fb.array(
         (data.sub_domains || []).map((sd: any) => this.createDomainFormGroup(sd)),
@@ -216,6 +213,57 @@ export class SurveyStructureStateService {
     });
   }
 
+  toggleDomainNa(node: FormGroup) {
+    const id = node.get('id')?.value;
+    const allowNa = node.get('allow_na')?.value;
+
+    if (id) {
+      this.surveyService.toggleDomainNa(id).subscribe({
+        error: (err) => {
+          // Revert state on error
+          node.get('allow_na')?.setValue(!allowNa, { emitEvent: false });
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: err?.error?.message || 'Failed to toggle N/A status',
+          });
+        },
+      });
+    } else {
+      // For new domains, just sync the whole object which includes the allow_na state
+      this.syncDomains();
+    }
+  }
+
+  duplicateDomain(id: string | number) {
+    if (!id) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Warning',
+        detail: 'Please wait for the domain to be saved before duplicating.',
+      });
+      return;
+    }
+
+    this.surveyService.duplicateDomain(id).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Domain duplicated successfully',
+        });
+        this.surveyResource.reload();
+      },
+      error: (err) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: err?.error?.message || 'Failed to duplicate domain',
+        });
+      },
+    });
+  }
+
   collectDomains(domainsArray: FormArray): any[] {
     return domainsArray.controls.map((d: any, i: number) => {
       const node = d as FormGroup;
@@ -223,7 +271,7 @@ export class SurveyStructureStateService {
         id: node.get('id')?.value || undefined,
         title: node.get('title')?.value,
         weight: node.get('weight')?.value || 0,
-        is_na: node.get('is_na')?.value || false,
+        allow_na: node.get('allow_na')?.value || false,
         order: i + 1,
         questions: this.getQuestions(node).controls.map((q: any, qi: number) => ({
           text: q.get('text')?.value,
@@ -283,7 +331,7 @@ export class SurveyStructureStateService {
         this.optionsArray.push(
           this.fb.group({
             text: [optText, Validators.required],
-            weight: [weightValue, [Validators.required, Validators.min(0)]],
+            weight: [weightValue, this.getOptionWeightValidators()],
             isNa: [false],
           }),
         );
@@ -316,10 +364,14 @@ export class SurveyStructureStateService {
     this.optionsArray.push(
       this.fb.group({
         text: ['', Validators.required],
-        weight: [0, [Validators.required, Validators.min(0)]],
+        weight: [0, this.getOptionWeightValidators()],
         isNa: [false],
       }),
     );
+  }
+
+  private getOptionWeightValidators() {
+    return this.weightingType() === 'non_graded' ? [] : [Validators.required, Validators.min(0)];
   }
 
   addNaOption() {

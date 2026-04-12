@@ -20,7 +20,7 @@ export abstract class BaseUser {
     const fields = [
       ...this.getHigherInputs(),
       ...this.getRoleFields(isEdit),
-      ...this.getLowerInputs(),
+      ...this.getLowerInputs(isEdit),
     ];
     return fields;
   }
@@ -54,14 +54,14 @@ export abstract class BaseUser {
     ];
   }
 
-  protected getLowerInputs(): IFormField[] {
+  protected getLowerInputs(isEdit?: boolean): IFormField[] {
     return [
       {
         key: 'password',
         label: 'Password',
         type: 'password',
         placeholder: '********',
-        validators: [], // Validations are handled dynamically or left optional typically for edit
+        validators: isEdit ? [Validators.minLength(8)] : [Validators.required, Validators.minLength(8)],
         colSpan: 'col-span-1',
       },
       {
@@ -69,7 +69,7 @@ export abstract class BaseUser {
         label: 'Confirm Password',
         type: 'password',
         placeholder: '********',
-        validators: [],
+        validators: isEdit ? [] : [Validators.required],
         colSpan: 'col-span-1',
       },
     ];
@@ -96,16 +96,30 @@ export abstract class BaseUser {
       transformed.health_directorate_id = data.entity_id;
     } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.AUTHORITY) {
       transformed.authority_id = data.entity_id;
-    } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.SUPER_ADMIN) {
-      if (data.categories && Array.isArray(data.categories) && data.categories.length > 0) {
-        transformed.category_ids = data.categories.map((c: any) => c.id);
-      }
     }
+    // Dynamic relational mapping based on available form fields
+    const fields = this.getFormFields(true);
+    const mappings: Record<string, string> = {
+      categories: 'category_ids',
+      authorities: 'authority_ids',
+      governorates: 'governorate_ids',
+      sectors: 'sector_ids',
+      divisions: 'division_ids',
+    };
 
-    // Standard array conversion
-    if (data.categories && Array.isArray(data.categories)) {
-      transformed.category_ids = data.categories.map((c: any) => c.id);
-    }
+    Object.entries(mappings).forEach(([apiPath, formKey]) => {
+      const apiData = data[apiPath];
+      if (apiData && Array.isArray(apiData)) {
+        const ids = apiData.map((item: any) => item.id);
+        const field = fields.find((f: any) => f.key === formKey);
+
+        if (field?.type === 'select') {
+          transformed[formKey] = ids.length > 0 ? ids[0] : null;
+        } else {
+          transformed[formKey] = ids;
+        }
+      }
+    });
 
     return transformed;
   }

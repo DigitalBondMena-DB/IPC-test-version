@@ -1,4 +1,4 @@
-import { Component, input, signal, forwardRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, signal, forwardRef, ChangeDetectionStrategy, output } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { LucideAngularModule, Check } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
@@ -78,6 +78,8 @@ export class BCheckboxComponent implements ControlValueAccessor {
   label = input<string>('');
   shape = input<'circle' | 'square'>('square');
 
+  change = output<boolean>();
+
   value = signal<boolean>(false);
   disabled = signal<boolean>(false);
 
@@ -92,6 +94,7 @@ export class BCheckboxComponent implements ControlValueAccessor {
     this.value.set(newValue);
     this.onChange(newValue);
     this.onTouched();
+    this.change.emit(newValue);
   }
 
   writeValue(value: any): void {

@@ -8,7 +8,7 @@ import { Validators } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { LucideAngularModule, Settings } from 'lucide-angular';
 import { BaseIdComponent } from '@shared/base/base-id-component';
-import { getCommonRelationalFields } from '@shared/config/common-fields.config';
+import { getCommonRelationalFields, COMMON_FIELD_KEYS } from '@shared/config/common-fields.config';
 
 @Component({
   selector: 'app-survey-setup',
@@ -28,7 +28,7 @@ import { getCommonRelationalFields } from '@shared/config/common-fields.config';
 
       <app-b-form-builder
         [fields]="fields()"
-        [initialData]="initialData()"
+        [initialData]="formValues()"
         [loading]="isSubmitting()"
         submitLabel="Save"
         cancelLabel="Cancel"
@@ -50,8 +50,6 @@ export class SurveySetupComponent extends BaseIdComponent {
   readonly settingsIcon = Settings;
 
   id = signal<string | null>(this.route.parent?.snapshot.paramMap.get('id') || null);
-
-  initialData = signal<any>({});
 
   // Resource for loading existing survey data
   surveyResource = this.id() ? this.surveyService.getSurveyById(this.id()!) : null;
@@ -93,17 +91,46 @@ export class SurveySetupComponent extends BaseIdComponent {
   constructor() {
     super();
     this.initDependencies(this.rawFields, this.surveyService);
+
+    // Sync initial survey data to formValues signal
     effect(() => {
       const data = this.surveyResource?.value();
       if (data) {
-        this.initialData.set({
-          ...data,
-          category_ids: data.categories?.map((c: any) => c.id) || [],
-          weighting_type: data.weighting_type || 'manual',
-          deadline_hours: data.deadline_hours?.toString() || '',
-        });
+        this.formValues.set(this.transformResponse(data));
       }
     });
+  }
+
+  // Transform API response to match form keys and "Select All" logic
+  transformResponse(data: any): any {
+    if (!data) return {};
+    const transformed: any = {
+      ...data,
+      category_ids: data.categories?.map((c: any) => c.id) || [],
+      weighting_type: data.weighting_type || 'manual',
+      deadline_hours: data.deadline_hours?.toString() || '',
+    };
+
+    // Map relational ID arrays and handle "Select All" states
+    const relations = [
+      { key: COMMON_FIELD_KEYS.AUTHORITY, apiPath: 'authorities', selectAllKey: 'all_authorities' },
+      { key: COMMON_FIELD_KEYS.SECTOR, apiPath: 'sectors', selectAllKey: 'all_sectors' },
+      { key: COMMON_FIELD_KEYS.GOVERNORATE, apiPath: 'governorates', selectAllKey: 'all_governorates' },
+      { key: COMMON_FIELD_KEYS.DIVISION, apiPath: 'divisions', selectAllKey: 'all_divisions' },
+      { key: COMMON_FIELD_KEYS.FACILITY, apiPath: 'facilities', selectAllKey: 'all_facilities' },
+    ];
+
+    relations.forEach((rel) => {
+      // If "Select All" flag is true in API, set the specific form key to ['SELECT_ALL']
+      if (data[rel.selectAllKey]) {
+        transformed[rel.key] = ['SELECT_ALL'];
+      } else if (data[rel.apiPath] && Array.isArray(data[rel.apiPath])) {
+        // Otherwise map the IDs
+        transformed[rel.key] = data[rel.apiPath].map((item: any) => item.id);
+      }
+    });
+
+    return transformed;
   }
 
   fields = computed(() => this.getAugmentedFields(this.rawFields, !!this.id()));

@@ -9,7 +9,7 @@
     } @else {
       <app-b-form-builder
         [fields]="fields()"
-        [initialData]="entityData()"
+        [initialData]="formValues()"
         [submitLabel]="submitLabel()"
         [loading]="isSubmitting()"
         (formSubmit)="onSubmit($event)"

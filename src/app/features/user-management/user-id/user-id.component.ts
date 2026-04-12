@@ -31,7 +31,7 @@ import { BaseIdComponent } from '@shared/base/base-id-component';
         } @else {
           <app-b-form-builder
             [fields]="fields()"
-            [initialData]="userData()"
+            [initialData]="formValues()"
             [submitLabel]="submitLabel()"
             [loading]="isSubmitting()"
             [groupValidators]="groupValidators"
@@ -68,21 +68,24 @@ export class UserIdComponent extends BaseIdComponent {
     : null;
     
   userData = computed(() => {
-    const data = this.userResource?.value() || {};
-    const transformed = this.isEdit() ? this.config.transformResponse(data) : data;
-
-    if (this.isEdit()) {
-      // Sync formValues with initial user data to trigger cascading dependencies
-      setTimeout(() => this.formValues.set({ ...transformed }));
-    }
-    return transformed;
+    const data = this.userResource?.value();
+    if (!data) return {};
+    return this.isEdit() ? this.config.transformResponse(data) : data;
   });
-  
+
   isLoading = computed(() => this.userResource?.isLoading() || false);
 
   constructor() {
     super();
     this.initDependencies(this.config.getFormFields(this.isEdit()), this._Service);
+
+    // Sync initial user data to formValues signal (Effect is better than timeout in computed)
+    effect(() => {
+      const data = this.userData();
+      if (data && Object.keys(data).length > 0) {
+        this.formValues.set({ ...data });
+      }
+    });
   }
 
   fields = computed(() =>

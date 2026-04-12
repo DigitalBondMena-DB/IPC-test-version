@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal, effect } from '@angular/core';
 import { BDataTableComponent } from '@shared/components/b-data-table/b-data-table.component';
 import { BPageHeaderComponent } from '@shared/components/b-page-header/b-page-header.component';
 import { EntityManagementService } from '../services/entity-management.service';
@@ -74,10 +74,18 @@ export class EntityListComponent {
     () => this.config.parent_type,
   );
 
-  tableData = computed(() => {
-    if (this.resource.error()) return [];
-    return this.resource.value()?.data ?? [];
-  });
+  localData = signal<any[]>([]);
+
+  constructor() {
+    effect(() => {
+      const res = this.resource.value();
+      if (res?.data) {
+        this.localData.set([...res.data]);
+      }
+    });
+  }
+
+  tableData = computed(() => this.localData());
   
   totalRecords = computed(() => {
     if (this.resource.error()) return 0;
@@ -108,19 +116,31 @@ export class EntityListComponent {
   }
 
   onToggle(event: { item: any }): void {
+    const originalStatus = event.item.is_active;
+
+    // Optimistic update
+    this.localData.update((data) =>
+      data.map((item) =>
+        item.id === event.item.id ? { ...item, is_active: !originalStatus } : item,
+      ),
+    );
+
     this._Service
       .toggleEntity(this.config.endpoint, this.config.entity_type, event.item.id)
       .subscribe({
         next: (res: any) => {
-          const isActive = res.data.is_active;
-          this.resource.reload();
           this._MessageService.add({
             summary: 'Success',
-            detail: `Entity ${isActive ? 'Activated' : 'Deactivated'} successfully`,
+            detail: res.message || 'Status updated successfully.',
           });
         },
         error: () => {
-          this.resource.reload();
+          // Revert on error
+          this.localData.update((data) =>
+            data.map((item) =>
+              item.id === event.item.id ? { ...item, is_active: originalStatus } : item,
+            ),
+          );
           this._MessageService.add({
             severity: 'error',
             summary: 'Error',

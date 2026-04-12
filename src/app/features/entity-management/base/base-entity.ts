@@ -62,9 +62,22 @@ export abstract class BaseEntity {
 
     const fields = this.getFormFields(true);
 
+    // Handle image fields: only send if it's a new file (File/Blob)
+    fields.forEach((field: any) => {
+      if (field.type === 'image') {
+        const value = payload[field.key];
+        if (!(value instanceof File || value instanceof Blob)) {
+          delete payload[field.key];
+        }
+      }
+    });
+
     // Handle formatting based on sendAs property
     fields.forEach((field: any) => {
-      if ((field.type === 'select' || field.type === 'multiselect') && payload[field.key] !== undefined) {
+      if (
+        (field.type === 'select' || field.type === 'multiselect') &&
+        payload[field.key] !== undefined
+      ) {
         const value = payload[field.key];
         const sendAs = field.sendAs || 'array';
 

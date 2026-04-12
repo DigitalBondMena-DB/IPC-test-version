@@ -199,10 +199,35 @@ export class ConditionalLogicStateService {
       },
     ]);
 
+    group.get('target_question_ids')?.setValidators([
+      (control: any) => {
+        const actionType = group.get('ui_action_type')?.value;
+        if (
+          ['show', 'hide', 'na', 'limited_answer'].includes(actionType) &&
+          (!control.value || control.value.length === 0)
+        ) {
+          return { required: true };
+        }
+        return null;
+      },
+    ]);
+
+    group.get('alert_type')?.setValidators([
+      (control: any) => {
+        const actionType = group.get('ui_action_type')?.value;
+        if (actionType === 'alert' && !control.value) {
+          return { required: true };
+        }
+        return null;
+      },
+    ]);
+
     if (!isEditing) group.disable();
 
     group.get('ui_action_type')?.valueChanges.subscribe(() => {
       group.get('target_answer_options')?.updateValueAndValidity();
+      group.get('target_question_ids')?.updateValueAndValidity();
+      group.get('alert_type')?.updateValueAndValidity();
     });
 
     group

@@ -41,20 +41,17 @@ export class PreliminaryQuestionsStateService {
       this.surveyId.set(foundId);
     }
 
-    effect(
-      () => {
-        const data = this.surveyResource.value();
-        if (data && data.preliminary_questions) {
-          // Map data to include local IDs if missing, so we can track them
-          const mappedQuestions = data.preliminary_questions.map((q: any) => ({
-            ...q,
-            id: q.id || crypto.randomUUID(),
-          }));
-          this.questionsList.set(mappedQuestions);
-        }
-      },
-      { allowSignalWrites: true },
-    );
+    effect(() => {
+      const data = this.surveyResource.value();
+      if (data && data.preliminary_questions) {
+        // Map data to include local IDs if missing, so we can track them
+        const mappedQuestions = data.preliminary_questions.map((q: any) => ({
+          ...q,
+          id: q.id || crypto.randomUUID(),
+        }));
+        this.questionsList.set(mappedQuestions);
+      }
+    });
   }
 
   syncWithBackend(successMessage: string) {

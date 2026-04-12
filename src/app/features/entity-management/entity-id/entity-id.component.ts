@@ -49,11 +49,7 @@ export class EntityIdComponent extends BaseIdComponent {
   entityData = computed(() => {
     const data = this.entityResource?.value();
     if (!data) return {};
-    const transformed = this.config.transformResponse(data);
-    setTimeout(() => {
-      this.formValues.set({ ...transformed });
-    });
-    return transformed;
+    return this.config.transformResponse(data);
   });
 
   isLoading = computed(() => (this.entityResource ? this.entityResource.isLoading() : false));
@@ -61,6 +57,14 @@ export class EntityIdComponent extends BaseIdComponent {
   constructor() {
     super();
     this.initDependencies(this.config.getFormFields(this.isEdit()), this._Service);
+
+    // Sync initial entity data to formValues signal
+    effect(() => {
+      const data = this.entityData();
+      if (data && Object.keys(data).length > 0) {
+        this.formValues.set({ ...data });
+      }
+    });
   }
 
   fields = computed(() =>

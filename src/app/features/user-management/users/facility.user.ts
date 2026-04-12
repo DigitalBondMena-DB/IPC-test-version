@@ -80,6 +80,18 @@ export class FacilityUser extends BaseUser {
         dependsOn: 'sector_ids',
       },
       {
+        key: 'entity_id',
+        label: 'Facility',
+        type: 'select',
+        placeholder: 'Select Facility',
+        validators: [Validators.required],
+        colSpan: 'col-span-1',
+        filter: true,
+        virtualScroll: true,
+        dataPath: API_CONFIG.ENDPOINTS.FACILITIES,
+        dependsOn: 'governorate_ids',
+      },
+      {
         key: 'is_supervisor',
         label: 'Supervisor',
         type: 'checkbox',

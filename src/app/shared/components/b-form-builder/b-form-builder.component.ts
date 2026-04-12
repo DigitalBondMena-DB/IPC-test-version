@@ -73,7 +73,21 @@ export class BFormBuilderComponent implements OnInit {
     effect(() => {
       const data = this.initialData();
       if (this.form && data) {
-        this.form.patchValue(data, { emitEvent: false });
+        // Only patch values that have actually changed to avoid overhead
+        const currentValues = this.form.getRawValue();
+        const changedValues: any = {};
+        let hasChanges = false;
+
+        Object.keys(data).forEach((key) => {
+          if (data[key] !== currentValues[key]) {
+            changedValues[key] = data[key];
+            hasChanges = true;
+          }
+        });
+
+        if (hasChanges) {
+          this.form.patchValue(changedValues, { emitEvent: false });
+        }
       }
     });
   }
@@ -104,8 +118,13 @@ export class BFormBuilderComponent implements OnInit {
       this.filteredFields().forEach((field) => {
         const control = this.form.get(field.key);
         if (control) {
-          if (field.disabled && control.enabled) control.disable({ emitEvent: false });
-          else if (!field.disabled && control.disabled) control.enable({ emitEvent: false });
+          // Only update disabled state if it actually changed to avoid redundant change detection
+          const shouldDisable = !!field.disabled;
+          if (shouldDisable && control.enabled) {
+            control.disable({ emitEvent: false });
+          } else if (!shouldDisable && control.disabled) {
+            control.enable({ emitEvent: false });
+          }
         } else {
           const newControl = this.fb.control(
             { value: data[field.key] || '', disabled: !!field.disabled },
@@ -146,7 +165,7 @@ export class BFormBuilderComponent implements OnInit {
 
   getErrorMessage(field: IFormField): string | null {
     const control = this.form.get(field.key);
-    if (!control || !control.touched || (control.valid && !control.hasError('passwordMismatch')))
+    if (!control || (!control.touched && !control.dirty) || (control.valid && !control.hasError('passwordMismatch')))
       return null;
 
     if (control.hasError('required')) return `${field.label} is required`;
@@ -161,6 +180,9 @@ export class BFormBuilderComponent implements OnInit {
       return `The ${field.label} field must not exceed ${maxSizeMB}MB`;
     }
     if (control.hasError('minlength')) {
+      if (field.key === 'password') {
+        return 'The password field must be at least 8 characters.';
+      }
       const requiredLength = control.errors?.['minlength']?.requiredLength;
       return `${field.label} must be at least ${requiredLength} characters`;
     }

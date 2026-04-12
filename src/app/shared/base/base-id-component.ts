@@ -41,40 +41,55 @@ export abstract class BaseIdComponent {
         const searchTerm = signal('');
         const page = signal(1);
 
-        const endpoint = computed(() => {
-          const values = this.formValues();
-          if (field.dependsOn) {
-            const parentValue = values[field.dependsOn];
-            const hasParentValue = parentValue && (!Array.isArray(parentValue) || parentValue.length > 0);
-            if (!hasParentValue) return undefined;
-          }
-          return field.dataPath!;
-        });
+        // Isolated dependency signal for the parent field
+        const parentValue = computed(
+          () => {
+            if (!field.dependsOn) return undefined;
+            const values = this.formValues();
+            return values[field.dependsOn];
+          },
+          { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+        );
 
-        const params = computed(() => {
-          const p: any = {
-            page: page(),
-            per_page: 15,
-            search: searchTerm(),
-          };
+        const endpoint = computed(
+          () => {
+            if (field.dependsOn) {
+              const val = parentValue();
+              const hasParentValue = val && (!Array.isArray(val) || val.length > 0);
+              if (!hasParentValue) return undefined;
+            }
+            return field.dataPath;
+          },
+          { equal: (a, b) => a === b },
+        );
 
-          if (field.dependsOn) {
-            const parentValue = this.formValues()[field.dependsOn];
-            if (parentValue) {
-              const isSelectAll = Array.isArray(parentValue)
-                ? parentValue.includes('SELECT_ALL')
-                : parentValue === 'SELECT_ALL';
+        const params = computed(
+          () => {
+            const p: any = {
+              page: page(),
+              per_page: 15,
+              search: searchTerm(),
+            };
 
-              if (!isSelectAll) {
-                const baseKey = field.dependsOn.endsWith('_ids')
-                  ? field.dependsOn.replace('_ids', '_id')
-                  : field.dependsOn;
-                p[`${baseKey}[]`] = Array.isArray(parentValue) ? parentValue : [parentValue];
+            if (field.dependsOn) {
+              const val = parentValue();
+              if (val) {
+                const isSelectAll = Array.isArray(val)
+                  ? val.includes('SELECT_ALL')
+                  : val === 'SELECT_ALL';
+
+                if (!isSelectAll) {
+                  const baseKey = field.dependsOn.endsWith('_ids')
+                    ? field.dependsOn.replace('_ids', '_id')
+                    : field.dependsOn;
+                  p[`${baseKey}[]`] = Array.isArray(val) ? val : [val];
+                }
               }
             }
-          }
-          return p;
-        });
+            return p;
+          },
+          { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
+        );
 
         const resource = service.get<any>(endpoint, params);
         const accumulated = signal<any[]>([]);
@@ -143,7 +158,11 @@ export abstract class BaseIdComponent {
       if (field.dependsOn) {
         const parentValue = values[field.dependsOn];
         const hasParentValue = parentValue && (!Array.isArray(parentValue) || parentValue.length > 0);
-        isDisabled = isDisabled || !hasParentValue;
+        
+        // Disable if parent is not selected OR if loading finished and no items were found
+        const noDataFound = s[field.key] && !s[field.key].resource.isLoading() && s[field.key].accumulated().filter((e: any) => e.is_active !== false).length === 0;
+        
+        isDisabled = isDisabled || !hasParentValue || noDataFound;
       }
 
       return {
@@ -166,7 +185,9 @@ export abstract class BaseIdComponent {
     };
 
     this.formValues.update((prev) => {
+      // Identity check first to avoid any notification if nothing changed
       if (prev[event.key] === event.value) return prev;
+
       const newValues = { ...prev, [event.key]: event.value };
       clearDependents(event.key, newValues);
       return newValues;
@@ -174,12 +195,13 @@ export abstract class BaseIdComponent {
 
     const resetState = (key: string) => {
       const state = this.depsState();
-      Object.keys(state).forEach((k) => {
+      Object.entries(state).forEach(([k, s]) => {
         const fieldDef = rawFields.find((f) => f.key === k);
         if (fieldDef?.dependsOn === key) {
-          state[k].page.set(1);
-          state[k].searchTerm.set('');
-          state[k].accumulated.set([]);
+          // Reset child state only if necessary
+          if (s.page() !== 1) s.page.set(1);
+          if (s.searchTerm() !== '') s.searchTerm.set('');
+          if (s.accumulated().length > 0) s.accumulated.set([]);
           resetState(k);
         }
       });

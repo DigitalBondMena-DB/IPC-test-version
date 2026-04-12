@@ -113,6 +113,9 @@
             <!-- Read-only text -->
             <span class="flex-1 text-sm font-semibold text-black-400 truncate pr-4">
               {{ domainNode.get('title')?.value }}
+              @if (domainNode.get('allow_na')?.value) {
+                <span class="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold">N/A</span>
+              }
             </span>
           </div>
 
@@ -163,12 +166,14 @@
                       </div>
                     </div>
                     <div class="flex items-center gap-1">
-                      <p class="font-medium text-sm text-gray-703 mr-2">
-                        highest score:
-                        <span class="font-normal text-sm text-black-400">
-                          {{ getMaxQuestionScore(q.get('meta_data')?.value?.weights) || 0 }}
-                        </span>
-                      </p>
+                      @if (weightingType() !== 'non_graded') {
+                        <p class="font-medium text-sm text-gray-703 mr-2">
+                          highest score:
+                          <span class="font-normal text-sm text-black-400">
+                            {{ getMaxQuestionScore(q.get('meta_data')?.value?.weights) || 0 }}
+                          </span>
+                        </p>
+                      }
                       <button
                         (click)="onEditFromGradedReview(item)"
                         class="text-blue-400 hover:text-blue-500 rounded hover:bg-blue-50 transition-colors p-2.5 bg-[#EFF6FF]"

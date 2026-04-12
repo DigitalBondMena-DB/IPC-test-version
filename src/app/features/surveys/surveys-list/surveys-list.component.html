@@ -12,7 +12,7 @@
     <div class="table-card">
       <app-b-data-table
         [columns]="columns"
-        [data]="surveysResource.value()?.data ?? []"
+        [data]="tableData()"
         [totalRecords]="surveysResource.value()?.total ?? 0"
         [loading]="isLoading()"
         [hasError]="hasError()"

@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormGroup, FormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule, Edit2, Trash2, Check, Plus } from 'lucide-angular';
+import { Observable, of } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { TreeSelectModule } from 'primeng/treeselect';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { ConditionalLogicStateService } from '../../conditional-logic.state';
@@ -67,7 +69,15 @@ export class LogicFormComponent implements OnInit {
         questionOptions: this.state.getQuestionOptions(triggerId),
         targetQuestionOptions: this.getFilteredTargetOptions(triggerId),
         targetAnswerOptions: this.state.getQuestionOptions(targetId),
-        targetId
+        targetId,
+        errors: {
+          trigger_question_id: !!(form.get('trigger_question_id')?.invalid && form.get('trigger_question_id')?.touched),
+          trigger_answer: !!(form.get('trigger_answer')?.invalid && form.get('trigger_answer')?.touched),
+          ui_action_type: !!(form.get('ui_action_type')?.invalid && form.get('ui_action_type')?.touched),
+          target_question_id: !!(form.get('target_question_ids')?.invalid && form.get('target_question_ids')?.touched),
+          target_answer_options: !!(form.get('target_answer_options')?.invalid && form.get('target_answer_options')?.touched),
+          alert_type: !!(form.get('alert_type')?.invalid && form.get('alert_type')?.touched),
+        }
       };
     });
   });
@@ -158,23 +168,15 @@ export class LogicFormComponent implements OnInit {
   }
 
   addRule() {
-    const rules = this.rulesForms();
-    const hasInvalid = rules.some(f => f.invalid && (f.get('isEditing')?.value || f.dirty));
-
-    if (hasInvalid) {
-      rules.forEach(f => f.invalid && f.markAllAsTouched());
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Validation',
-        detail: 'Please complete or correct the current rules first.',
-      });
-      return;
-    }
-
-    const newForm = this.state.createRuleForm(null);
-    this.setupFormSubscription(newForm);
-    this.rulesForms.set([...rules, newForm]);
-    // Newly added form is inherently in "edit" mode by state service defaults
+    this.saveAllActiveRules().subscribe({
+      next: (success) => {
+        if (!success) return;
+        const rules = this.rulesForms();
+        const newForm = this.state.createRuleForm(null);
+        this.setupFormSubscription(newForm);
+        this.rulesForms.set([...rules, newForm]);
+      }
+    });
   }
 
   editRule(index: number) {
@@ -194,38 +196,66 @@ export class LogicFormComponent implements OnInit {
     this.rulesForms.set([...rules]); // UI Update for Zoneless
   }
 
-  saveRule(index: number) {
+  saveRule(index: number): Observable<any> {
     const rules = this.rulesForms();
     const form = rules[index];
 
     if (form.invalid) {
       form.markAllAsTouched();
-      return;
+      this.formUpdateVersion.update(v => v + 1);
+      return of(null);
     }
 
     const val = form.getRawValue();
     const ruleId = val.id;
     const triggerQId = val.trigger_question_id;
 
-    this.state.saveLogicRule(val, ruleId, triggerQId).subscribe({
-      next: (res) => {
-        const savedId = res?.data?.id || res?.id || ruleId;
-        form.patchValue({ id: savedId, isEditing: false });
-        form.disable();
-        
-        // Remove from editingIds set
-        this.state.editingIds.update(set => {
-          const newSet = new Set(set);
-          newSet.delete(ruleId || `temp_${index}`);
-          newSet.delete(savedId);
-          return newSet;
-        });
+    return this.state.saveLogicRule(val, ruleId, triggerQId).pipe(
+      tap({
+        next: (res) => {
+          const savedId = res?.data?.id || res?.id || ruleId;
+          form.patchValue({ id: savedId, isEditing: false });
+          form.disable();
+          
+          this.state.editingIds.update(set => {
+            const newSet = new Set(set);
+            newSet.delete(ruleId || `temp_${index}`);
+            newSet.delete(savedId);
+            return newSet;
+          });
 
-        this.rulesForms.set([...rules]);
-        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Rule saved' });
-        this.state.surveyResource.reload();
-      },
-      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to save rule' })
+          this.rulesForms.set([...rules]);
+          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Rule saved' });
+          this.state.surveyResource.reload();
+        },
+        error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to save rule' })
+      })
+    );
+  }
+
+  private saveAllActiveRules(): Observable<boolean> {
+    const editIndex = this.rulesForms().findIndex(f => f.get('isEditing')?.value);
+    if (editIndex === -1) return of(true);
+    
+    const form = this.rulesForms()[editIndex];
+    if (form.invalid) {
+      form.markAllAsTouched();
+      this.formUpdateVersion.update(v => v + 1);
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Please fix validation errors before proceeding.' });
+      return of(false);
+    }
+
+    return new Observable<boolean>(subscriber => {
+      this.saveRule(editIndex).subscribe({
+        next: (val) => {
+          subscriber.next(val !== null);
+          subscriber.complete();
+        },
+        error: () => {
+          subscriber.next(false);
+          subscriber.complete();
+        }
+      });
     });
   }
 
@@ -303,7 +333,13 @@ export class LogicFormComponent implements OnInit {
   }
 
   onSaveAndBack() {
-    this.router.navigate(['../review'], { relativeTo: this.route });
+    this.saveAllActiveRules().subscribe({
+      next: (success) => {
+        if (success) {
+          this.router.navigate(['../review'], { relativeTo: this.route });
+        }
+      }
+    });
   }
 
   onBackToReview() {

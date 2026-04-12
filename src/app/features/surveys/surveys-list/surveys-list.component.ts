@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal,
+  computed,
+  effect,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { BDataTableComponent } from '@/shared/components/b-data-table/b-data-table.component';
 import { BPageHeaderComponent } from '@/shared/components/b-page-header/b-page-header.component';
@@ -36,7 +43,9 @@ export class SurveysListComponent {
           case 'manual':
             return 'Weighted';
           case 'question_count':
-            return 'Non-Weighted';
+            return 'Non Weighted';
+          case 'non_graded':
+            return 'Non Graded';
           default:
             return value;
         }
@@ -69,6 +78,19 @@ export class SurveysListComponent {
   // Data Resource
   surveysResource = this._SurveyService.getSurveys(this.params);
 
+  localData = signal<any[]>([]);
+
+  constructor() {
+    effect(() => {
+      const res = this.surveysResource.value();
+      if (res?.data) {
+        this.localData.set([...res.data]);
+      }
+    });
+  }
+
+  tableData = computed(() => this.localData());
+
   // Actions
   onSearch(query: string) {
     this.params.update((p) => ({ ...p, search: query, page: 1 }));
@@ -100,17 +122,29 @@ export class SurveysListComponent {
   }
 
   onToggle(event: { item: any; field: string; value: boolean }) {
+    const originalStatus = event.item.is_active;
+
+    // Optimistic update
+    this.localData.update((data) =>
+      data.map((item) =>
+        item.id === event.item.id ? { ...item, is_active: !originalStatus } : item,
+      ),
+    );
+
     this._SurveyService.toggleSurvey(event.item.id).subscribe({
       next: (res) => {
-        const isActive = res.is_active;
-        this.surveysResource.reload();
         this._MessageService.add({
           summary: 'Success',
-          detail: `Entity ${isActive ? 'Activated' : 'Deactivated'} successfully`,
+          detail: res.message || 'Status updated successfully.',
         });
       },
       error: () => {
-        this.surveysResource.reload();
+        // Revert on error
+        this.localData.update((data) =>
+          data.map((item) =>
+            item.id === event.item.id ? { ...item, is_active: originalStatus } : item,
+          ),
+        );
         this._MessageService.add({
           severity: 'error',
           summary: 'Error',
