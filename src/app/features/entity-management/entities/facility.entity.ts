@@ -13,8 +13,10 @@ export class FacilityEntity extends BaseEntity {
 
   override readonly columns = [
     { field: 'name', header: 'Name', sortable: true },
+    { field: 'divisions', header: 'Division', sortable: true, type: 'text' },
     { field: 'authority', header: 'Authority', sortable: true, type: 'text' },
-    { field: 'categories', header: 'Division', sortable: true, type: 'text' },
+    { field: 'governorate_choice', header: 'Governorate', sortable: true, type: 'text' },
+    { field: 'sector_choice', header: 'Sector', sortable: true, type: 'text' },
     { field: 'updated_at', header: 'Last Update', sortable: true, type: 'date' },
     { field: 'updated_by', header: 'Updated By', sortable: true },
     { field: 'is_active', header: 'Actions', type: 'toggle', customClass: 'justify-end' },

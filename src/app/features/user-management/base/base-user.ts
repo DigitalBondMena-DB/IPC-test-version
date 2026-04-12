@@ -123,6 +123,13 @@ export abstract class BaseUser {
       }
     });
 
+    // Standardize "Select All" handling for all fields
+    fields.forEach((field: any) => {
+      if (field.hasSelectAll && field.selectAllKey && data[field.selectAllKey] === true) {
+        transformed[field.key] = ['SELECT_ALL'];
+      }
+    });
+
     return transformed;
   }
 

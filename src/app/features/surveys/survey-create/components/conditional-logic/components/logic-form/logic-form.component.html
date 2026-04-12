@@ -241,7 +241,7 @@
       Back to Review
     </button>
     <div class="flex items-center gap-3">
-      @if (selectedTreeNode() && currentSubdomainQuestions().length > 0) {
+      @if (selectedTreeNode() && currentSubdomainQuestions().length > 0 && !isAnyRuleEditing()) {
         <button
           type="button"
           class="flex items-center gap-2 bg-[#16A34A] text-white px-6.5 py-3 rounded-2xl hover:bg-green-700 transition-colors font-medium"

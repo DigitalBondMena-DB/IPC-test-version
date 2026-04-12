@@ -143,8 +143,9 @@ export abstract class BaseIdComponent {
         // No data handling
         const parentValue = field.dependsOn ? values[field.dependsOn] : null;
         const hasParentValue = parentValue && (!Array.isArray(parentValue) || parentValue.length > 0);
+        const isSearching = !!state.searchTerm();
 
-        if (!state.resource.isLoading() && filteredOptions.length === 0 && field.dependsOn && hasParentValue) {
+        if (!state.resource.isLoading() && filteredOptions.length === 0 && field.dependsOn && hasParentValue && !isSearching) {
           overrides.subLable = 'No data available for this selection';
         }
 
@@ -159,8 +160,11 @@ export abstract class BaseIdComponent {
         const parentValue = values[field.dependsOn];
         const hasParentValue = parentValue && (!Array.isArray(parentValue) || parentValue.length > 0);
         
-        // Disable if parent is not selected OR if loading finished and no items were found
-        const noDataFound = s[field.key] && !s[field.key].resource.isLoading() && s[field.key].accumulated().filter((e: any) => e.is_active !== false).length === 0;
+        // Disable if parent is not selected OR if loading finished and no items were found (while NOT searching)
+        const noDataFound = s[field.key] && 
+                           !s[field.key].resource.isLoading() && 
+                           s[field.key].accumulated().filter((e: any) => e.is_active !== false).length === 0 && 
+                           !s[field.key].searchTerm();
         
         isDisabled = isDisabled || !hasParentValue || noDataFound;
       }
