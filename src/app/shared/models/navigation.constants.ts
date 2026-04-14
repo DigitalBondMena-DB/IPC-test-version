@@ -9,7 +9,7 @@ export const ALL_MENU_ITEMS: NavItem[] = [
   { label: 'User Management', icon: 'Dashboard', isSection: true },
   { label: 'Overview', routerLink: '/dashboard' },
   { label: 'Divisions', roles: ['super_admin', 'authority'], routerLink: '/dashboard/divisions' },
-  { label: 'Authority', routerLink: '/dashboard/authorities', roles: ['super_admin'] },
+  { label: 'Authorities', routerLink: '/dashboard/authorities', roles: ['super_admin'] },
   {
     label: 'Governorates',
     roles: ['super_admin', 'authority'],
@@ -28,16 +28,15 @@ export const ALL_MENU_ITEMS: NavItem[] = [
         routerLink: '/dashboard/authorities-users',
       },
       {
-        label: 'Sectors',
-        roles: ['super_admin', 'governorate', 'authority'],
-        routerLink: '/dashboard/sectors-users',
-      },
-      {
         label: 'Governorates',
         roles: ['super_admin', 'governorate', 'authority'],
         routerLink: '/dashboard/governorates-users',
       },
-
+      {
+        label: 'Sectors',
+        roles: ['super_admin', 'governorate', 'authority'],
+        routerLink: '/dashboard/sectors-users',
+      },
       {
         label: 'Facilities',
         roles: ['super_admin', 'authority', 'authority'],
@@ -45,7 +44,6 @@ export const ALL_MENU_ITEMS: NavItem[] = [
       },
     ],
   },
-
   { label: 'Survey Builder', roles: ['super_admin', 'authority'], icon: 'Survey', isSection: true },
   {
     label: 'New Survey',

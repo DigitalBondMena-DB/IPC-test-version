@@ -13,6 +13,7 @@ export class DivisionEntity extends BaseEntity {
 
   override readonly columns = [
     { field: 'name', header: 'Name', sortable: true },
+    { field: 'authority', header: 'Authority', sortable: true },
     { field: 'updated_at', header: 'Last Update', sortable: true, type: 'date' },
     { field: 'updated_by', header: 'Updated By', sortable: true },
     { field: 'is_active', header: 'Actions', type: 'toggle', customClass: 'justify-end' },
