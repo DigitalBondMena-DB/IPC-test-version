@@ -9,7 +9,7 @@ export interface SurveyOverview {
   scoring_type: string;
   weighting_type: string;
   is_active: boolean;
-  categories: string[];
+  divisions: string[];
   totals: SurveyTotals;
   domains: SurveyDomain[];
   high_risk_summary: HighRiskSummary;

@@ -38,7 +38,7 @@ export class AuthorityEntity extends BaseEntity {
         type: 'text',
         placeholder: 'Enter Authority Name...',
         validators: [Validators.required],
-        colSpan: 'col-span-1',
+        colSpan: 'col-span-full',
       },
     ];
   }

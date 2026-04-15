@@ -2,8 +2,15 @@
 .table-container {
   background: #fff;
   border-radius: 12px;
-  overflow-x: auto;
   border: 1px solid #e1e7ef;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-responsive-wrapper {
+  width: 100%;
+  overflow-x: auto;
 }
 
 .data-table {

@@ -28,7 +28,7 @@
         @if (item && item.label) {
           {{ item.label }}
         } @else {
-          <div class="flex items-center gap-2 py-1">
+          <div class="flex items-center gap-2 py-1" appVisibilityTrigger (visible)="triggerPagination()">
             <div class="animate-pulse bg-gray-100 h-4 w-24 rounded"></div>
             <span class="text-xs text-gray-400">Loading...</span>
           </div>

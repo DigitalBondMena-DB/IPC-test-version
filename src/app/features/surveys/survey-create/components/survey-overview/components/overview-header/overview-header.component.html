@@ -11,13 +11,13 @@
 
   <h2 class="text-[28px] font-semibold text-[#343C6A] mb-6">{{ overview().title }}</h2>
 
-  @if (overview().categories.length) {
+  @if (overview().divisions.length) {
     <div class="flex flex-wrap gap-2 mb-6">
-      @for (category of overview().categories; track category) {
+      @for (division of overview().divisions; track $index) {
         <span
           class="px-3 py-1 bg-gray-50 text-gray-600 text-xs font-medium rounded-full border border-gray-200"
         >
-          {{ category }}
+          {{ division }}
         </span>
       }
     </div>

@@ -18,6 +18,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { BLableComponent } from '../b-lable/b-lable.component';
 import { SelectModule } from 'primeng/select';
+import { VisibilityTriggerDirective } from '@shared/directives/visibility-trigger.directive';
 
 @Component({
   selector: 'app-b-select',
@@ -29,6 +30,7 @@ import { SelectModule } from 'primeng/select';
     SelectModule,
     BLableComponent,
     TooltipModule,
+    VisibilityTriggerDirective,
   ],
   templateUrl: './b-select.component.html',
   styleUrl: './b-select.component.css',
@@ -81,6 +83,14 @@ export class BSelectComponent implements ControlValueAccessor, OnDestroy {
 
   onFilterChange(event: any) {
     this.searchSubject.next(event.filter);
+  }
+
+  triggerPagination() {
+    if (!this.loading()) {
+      const opts = this.options();
+      // Emulate the PrimeNG LazyLoadEvent "last" property to satisfy base-id-component requirements
+      this.onScrollPagination.emit({ last: opts ? opts.length : 999999 });
+    }
   }
 
   writeValue(value: any): void {
