@@ -20,8 +20,6 @@ export interface IUser {
   providedIn: 'root',
 })
 export class UserManagementService extends HttpService {
-  // Generic methods to handle different user types by passing the endpoint
-
   getUsers(
     endpoint: string,
     userType: string,

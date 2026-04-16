@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, effect, computed } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MessageService, TreeNode } from 'primeng/api';
@@ -9,7 +9,6 @@ import { debounceTime } from 'rxjs';
 @Injectable()
 export class SurveyStructureStateService {
   private readonly fb = inject(FormBuilder);
-  private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly surveyService = inject(SurveyService);
   private readonly messageService = inject(MessageService);
@@ -128,6 +127,7 @@ export class SurveyStructureStateService {
 
   createDomainFormGroup(data: any = {}): FormGroup {
     const titleValue = data.title || '';
+    const subdomainsData = data.sub_domains || data.children || [];
     return this.fb.group({
       id: [data.id || null],
       title: [titleValue, Validators.required],
@@ -136,9 +136,7 @@ export class SurveyStructureStateService {
       lastTitle: [data.lastTitle !== undefined ? data.lastTitle : titleValue],
       allow_na: [data.allow_na ?? data.is_na ?? false],
       questions: this.fb.array((data.questions || []).map((q: any) => this.fb.group(q))),
-      sub_domains: this.fb.array(
-        (data.sub_domains || []).map((sd: any) => this.createDomainFormGroup(sd)),
-      ),
+      sub_domains: this.fb.array(subdomainsData.map((sd: any) => this.createDomainFormGroup(sd))),
     });
   }
 
@@ -201,6 +199,11 @@ export class SurveyStructureStateService {
     const domainsPayload = this.collectDomains(this.domains);
     this.surveyService.updateSurvey(this.surveyId()!, { domains: domainsPayload }).subscribe({
       next: (res) => {
+        console.log('Sync response:', res);
+        const data = res?.data || res;
+        if (data && data.domains) {
+          this.updateNodeIds(this.domains, data.domains);
+        }
         this.lastSyncedSnapshot = structuredClone(this.domains.getRawValue());
       },
       error: () => {
@@ -211,6 +214,60 @@ export class SurveyStructureStateService {
           detail: 'Failed to sync survey structure. Changes reverted.',
         });
       },
+    });
+  }
+
+  private updateNodeIds(formArray: FormArray, dataArray: any[]) {
+    formArray.controls.forEach((control) => {
+      const node = control as FormGroup;
+      const currentId = node.get('id')?.value;
+      const currentTitle = node.get('title')?.value;
+
+      // Try to find the matching data by ID first, then by title as fallback for new items
+      const data = currentId
+        ? dataArray.find((d) => d.id === currentId)
+        : dataArray.find((d) => d.title === currentTitle);
+
+      if (!data) return;
+
+      // Update ID if missing
+      const serverId = data.id;
+      if (!currentId && serverId) {
+        console.log(`Setting ID ${serverId} for node:`, currentTitle);
+        node.get('id')?.setValue(serverId, { emitEvent: false });
+      }
+
+      // Recurse for subdomains
+      const subdomainsFormArray = this.getSubdomains(node);
+      const subdomainsDataArray = data.sub_domains || data.children || [];
+      if (subdomainsFormArray && subdomainsDataArray.length > 0) {
+        this.updateNodeIds(subdomainsFormArray, subdomainsDataArray);
+      }
+
+      // Recurse for questions
+      const questionsFormArray = this.getQuestions(node);
+      const questionsDataArray = data.questions || [];
+      if (questionsFormArray && questionsDataArray.length > 0) {
+        questionsFormArray.controls.forEach((qControl) => {
+          const qGroup = qControl as FormGroup;
+          const qTitle = qGroup.get('text')?.value;
+          const qId = qGroup.get('id')?.value;
+
+          const qData = qId
+            ? questionsDataArray.find((qd: any) => qd.id === qId)
+            : questionsDataArray.find((qd: any) => qd.text === qTitle);
+
+          if (qData && qData.id) {
+            if (qGroup.get('id')) {
+              if (!qGroup.get('id')?.value) {
+                qGroup.get('id')?.setValue(qData.id, { emitEvent: false });
+              }
+            } else {
+              qGroup.addControl('id', this.fb.control(qData.id), { emitEvent: false });
+            }
+          }
+        });
+      }
     });
   }
 
@@ -237,7 +294,8 @@ export class SurveyStructureStateService {
   }
 
   duplicateDomain(id: string | number) {
-    if (!id) {
+    console.log('Duplicating domain with ID:', id);
+    if (id === null || id === undefined || id === '') {
       this.messageService.add({
         severity: 'warn',
         summary: 'Warning',
@@ -459,7 +517,9 @@ export class SurveyStructureStateService {
     const title = node.get('title')?.value || 'Untitled';
     const id = node.get('id')?.value;
     const treeNode: TreeNode & { searchTitle?: string } = {
-      key: id ? `node_${id}` : `node_level_${level}_${title}_${Math.random().toString(36).substring(7)}`,
+      key: id
+        ? `node_${id}`
+        : `node_level_${level}_${title}_${Math.random().toString(36).substring(7)}`,
       label: title,
       data: { formGroup: node, breadcrumbs },
       selectable: subdomains.length === 0,
