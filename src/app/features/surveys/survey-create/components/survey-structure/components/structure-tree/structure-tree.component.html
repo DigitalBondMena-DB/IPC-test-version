@@ -173,15 +173,27 @@
 
           <div class="flex items-center gap-3">
             @if (weightingType() === 'manual') {
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-gray-500">Percentage:</span>
-                <input
-                  type="number"
-                  max="100"
-                  [formControl]="domainNode.get('weight')"
-                  (blur)="onNodeBlur(domainNode)"
-                  class="w-16 px-2 py-1 border border-gray-200 rounded text-center text-sm font-bold bg-white focus:outline-0 text-black-400"
-                />
+              <div class="flex flex-col gap-1 items-end relative">
+                <!-- <div class="flex"></div> -->
+                <div class="flex items-center gap-2">
+                  <div class="flex flex-col">
+                    <span class="text-xs text-gray-500">Percentage:</span>
+                    @if (domainNode.get('remaining_weight')?.value) {
+                      <span
+                        class="right-0 mt-0.5 text-[10px] font-semibold text-green-600 whitespace-nowrap"
+                      >
+                        Remaining: {{ domainNode.get('remaining_weight')?.value }}%
+                      </span>
+                    }
+                  </div>
+                  <input
+                    type="number"
+                    max="100"
+                    [formControl]="domainNode.get('weight')"
+                    (blur)="onNodeBlur(domainNode)"
+                    class="w-16 px-2 py-1 border border-gray-200 rounded text-center text-sm font-bold bg-white focus:outline-0 text-black-400"
+                  />
+                </div>
               </div>
             }
 

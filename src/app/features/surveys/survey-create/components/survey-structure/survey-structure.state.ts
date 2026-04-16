@@ -132,6 +132,7 @@ export class SurveyStructureStateService {
       id: [data.id || null],
       title: [titleValue, Validators.required],
       weight: [data.weight || 1],
+      remaining_weight: [data.remaining_weight ?? null],
       isExpanded: [data.isExpanded !== undefined ? data.isExpanded : true],
       lastTitle: [data.lastTitle !== undefined ? data.lastTitle : titleValue],
       allow_na: [data.allow_na ?? data.is_na ?? false],
@@ -235,6 +236,15 @@ export class SurveyStructureStateService {
       if (!currentId && serverId) {
         console.log(`Setting ID ${serverId} for node:`, currentTitle);
         node.get('id')?.setValue(serverId, { emitEvent: false });
+      }
+
+      // Update remaining_weight if it exists
+      if (data.remaining_weight !== undefined) {
+        if (node.get('remaining_weight')) {
+          node.get('remaining_weight')?.setValue(data.remaining_weight, { emitEvent: false });
+        } else {
+          node.addControl('remaining_weight', this.fb.control(data.remaining_weight), { emitEvent: false });
+        }
       }
 
       // Recurse for subdomains
