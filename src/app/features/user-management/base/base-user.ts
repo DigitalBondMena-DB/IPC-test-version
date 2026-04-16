@@ -1,6 +1,7 @@
 import { IFormField } from '@shared/models/form-field.model';
 import { Validators } from '@angular/forms';
 import { API_CONFIG } from '@/core/config/api.config';
+import { FormCascadeUtil } from '@shared/utils/form-cascade.util';
 
 export abstract class BaseUser {
   abstract readonly title: string;
@@ -80,8 +81,9 @@ export abstract class BaseUser {
   // Hook for reshaping data when loading for edit
   transformResponse(data: any): any {
     if (!data) return {};
-    const transformed = { ...data };
     const type = this.userType;
+    const fields = this.getFormFields(true);
+    let transformed = FormCascadeUtil.transformResponse(data, fields);
 
     // Apply specific conversions based on what type this user instance represents natively
     if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.HOSPITAL) {
@@ -99,65 +101,14 @@ export abstract class BaseUser {
     } else if (type === API_CONFIG.ENDPOINTS.USERS.TYPE.AUTHORITY) {
       transformed.authority_id = data.entity_id;
     }
-    // Dynamic relational mapping based on available form fields
-    const fields = this.getFormFields(true);
-    const mappings: Record<string, string> = {
-      categories: 'category_ids',
-      authorities: 'authority_ids',
-      governorates: 'governorate_ids',
-      sectors: 'sector_ids',
-      divisions: 'division_ids',
-    };
-
-    Object.entries(mappings).forEach(([apiPath, formKey]) => {
-      const apiData = data[apiPath];
-      if (apiData && Array.isArray(apiData)) {
-        const ids = apiData.map((item: any) => item.id);
-        const field = fields.find((f: any) => f.key === formKey);
-
-        if (field?.type === 'select') {
-          transformed[formKey] = ids.length > 0 ? ids[0] : null;
-        } else {
-          transformed[formKey] = ids;
-        }
-      }
-    });
-
-    // Standardize "Select All" handling for all fields
-    fields.forEach((field: any) => {
-      if (field.hasSelectAll && field.selectAllKey && data[field.selectAllKey] === true) {
-        transformed[field.key] = ['SELECT_ALL'];
-      }
-    });
 
     return transformed;
   }
 
   // Hook for reshaping payload before saving
   preparePayload(formData: any): any {
-    const payload = { ...formData };
     const fields = this.getFormFields(true);
-
-    // Handle formatting based on sendAs property
-    fields.forEach((field: any) => {
-      if (
-        (field.type === 'select' || field.type === 'multiselect') &&
-        payload[field.key] !== undefined
-      ) {
-        const value = payload[field.key];
-        const sendAs = field.sendAs || 'array';
-
-        if (sendAs === 'array') {
-          if (value !== null && value !== '' && !Array.isArray(value)) {
-            payload[field.key] = [value];
-          }
-        } else if (sendAs === 'single') {
-          if (Array.isArray(value)) {
-            payload[field.key] = value.length > 0 ? value[0] : null;
-          }
-        }
-      }
-    });
+    let payload = FormCascadeUtil.preparePayload(formData, fields);
 
     // Common standard entity extraction for single assignment hierarchy
     if (formData.hospital_id) {
@@ -179,17 +130,6 @@ export abstract class BaseUser {
     ];
     entityKeys.forEach((key) => {
       delete payload[key];
-    });
-
-    // Default "Select All" logic handling
-    const rawFields = this.getFormFields(true);
-    rawFields.forEach((field: any) => {
-      if (field.hasSelectAll && field.selectAllKey && Array.isArray(payload[field.key])) {
-        if (payload[field.key].includes('SELECT_ALL')) {
-          delete payload[field.key];
-          payload[field.selectAllKey] = true;
-        }
-      }
     });
 
     Object.keys(payload).forEach((key) => {

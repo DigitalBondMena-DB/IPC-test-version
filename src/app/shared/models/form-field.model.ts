@@ -18,5 +18,6 @@ export interface IFormField {
   hasSelectAll?: boolean;
   selectAllKey?: string;
   dataPath?: string;
+  include?: string;
   sendAs?: 'array' | 'single';
 }

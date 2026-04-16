@@ -34,6 +34,7 @@ export class SuperAdminUser extends BaseUser {
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.DIVISIONS,
+        include: 'divisions',
         hasSelectAll: true,
         selectAllKey: 'all_divisions',
       },

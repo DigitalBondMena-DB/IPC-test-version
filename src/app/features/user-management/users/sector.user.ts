@@ -37,6 +37,7 @@ export class SectorUser extends BaseUser {
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
+        include: 'authorities',
         hasSelectAll: true,
         selectAllKey: 'all_authorities',
       },
@@ -51,6 +52,7 @@ export class SectorUser extends BaseUser {
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.SECTORS,
+        include: 'sectors',
         dependsOn: 'authority_ids',
       },
       {
@@ -63,6 +65,7 @@ export class SectorUser extends BaseUser {
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.DIVISIONS,
+        include: 'divisions',
         hasSelectAll: true,
         selectAllKey: 'all_divisions',
         dependsOn: 'authority_ids',

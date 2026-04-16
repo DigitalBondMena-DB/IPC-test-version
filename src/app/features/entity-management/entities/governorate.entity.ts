@@ -32,7 +32,7 @@ export class GovernorateEntity extends BaseEntity {
       {
         key: 'authority_ids',
         label: 'Authority Name',
-        type: 'multiselect',
+        type: 'select',
         placeholder: 'Select authority name...',
         validators: [Validators.required],
         roles: ['super_admin'],
@@ -40,8 +40,7 @@ export class GovernorateEntity extends BaseEntity {
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
-        hasSelectAll: true,
-        selectAllKey: 'all_authorities',
+        include: 'authorities',
         isDisabledWhenEdit: true,
       },
     ];

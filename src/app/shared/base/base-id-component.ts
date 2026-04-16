@@ -10,8 +10,11 @@ export interface IBaseDataService {
   ): HttpResourceRef<T | undefined>;
 }
 
+import { DropdownCascadeService } from '@shared/services/dropdown-cascade.service';
+
 export abstract class BaseIdComponent {
   protected readonly _AuthService = inject(AuthService);
+  protected readonly _CascadeService = inject(DropdownCascadeService);
 
   // Common signals used across all form-based management components
   readonly formValues = signal<Record<string, any>>({});
@@ -26,6 +29,7 @@ export abstract class BaseIdComponent {
         page: WritableSignal<number>;
         accumulated: WritableSignal<any[]>;
         resource: HttpResourceRef<any | undefined>;
+        includeKey: string;
       }
     >
   >({});
@@ -73,56 +77,81 @@ export abstract class BaseIdComponent {
               const hasParentValue = val && (!Array.isArray(val) || val.length > 0);
               if (!hasParentValue) return undefined;
             }
-            return field.dataPath;
+            // All dependency fields must resolve to the uniform cascade endpoint
+            return field.include || field.dataPath ? 'entities/cascade' : undefined;
           },
           { equal: (a, b) => a === b },
         );
 
         const params = computed(
           () => {
+            const includeKey = field.include || (field.dataPath ? field.dataPath.split('/').pop() : '');
+            
             const p: any = {
-              page: page(),
               per_page: 15,
-              search: searchTerm(),
+              include: includeKey
             };
 
-            if (field.dependsOn) {
-              const val = parentValue();
-              // Don't add parent params if the parent is implicitly resolved (hidden by roles)
-              if (val && val !== '__IMPLICIT__') {
-                const isSelectAll = Array.isArray(val)
-                  ? val.includes('SELECT_ALL')
-                  : val === 'SELECT_ALL';
+            if (includeKey) {
+              p[`${includeKey}_page`] = page();
+              p[`${includeKey}_search`] = searchTerm();
+            }
 
-                if (!isSelectAll) {
-                  const baseKey = field.dependsOn.endsWith('_ids')
-                    ? field.dependsOn.replace('_ids', '_id')
-                    : field.dependsOn;
-                  p[`${baseKey}[]`] = Array.isArray(val) ? val : [val];
+            // Recursive Ancestor Traversal: Include all ancestors in the chain (Parent, Grandparent, etc.)
+            let currentFieldDef: IFormField | undefined = field;
+            const values = this.formValues();
+
+            while (currentFieldDef?.dependsOn) {
+              const parentKey: string = currentFieldDef.dependsOn;
+              const parentFieldDef: IFormField | undefined = fields.find((f) => f.key === parentKey);
+              if (!parentFieldDef) break;
+
+              // Check if the parent field is hidden from this user by roles
+              const isParentHidden = parentFieldDef?.roles && parentFieldDef.roles.length > 0 && !parentFieldDef.roles.includes(userRole);
+
+              if (!isParentHidden) {
+                const val = values[parentKey];
+                if (val !== undefined && val !== null && val !== '') {
+                  const isSelectAll = Array.isArray(val)
+                    ? val.includes('SELECT_ALL')
+                    : val === 'SELECT_ALL';
+
+                  if (isSelectAll) {
+                    if (parentFieldDef.selectAllKey) {
+                      p[parentFieldDef.selectAllKey] = true;
+                    }
+                  } else {
+                    p[`${parentKey}[]`] = Array.isArray(val) ? val : [val];
+                  }
                 }
               }
+              currentFieldDef = parentFieldDef;
             }
             return p;
           },
           { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
         );
 
-        const resource = service.get<any>(endpoint, params);
+        const resource = this._CascadeService.get<any>(endpoint, params);
         const accumulated = signal<any[]>([]);
 
         // Sync accumulated data for virtual scrolling
         effect(() => {
           if (resource.isLoading()) return;
-          const res = resource.value();
-          if (res?.data) {
-            if (page() === 1) accumulated.set(res.data);
-            else accumulated.update((prev) => [...prev, ...res.data]);
+          const res = resource.value() as any;
+          const includeKey = field.include || (field.dataPath ? field.dataPath.split('/').pop() : '');
+          const entityData = includeKey && res ? res[includeKey] : null;
+
+          if (entityData?.data) {
+            if (page() === 1) accumulated.set(entityData.data);
+            else accumulated.update((prev) => [...prev, ...entityData.data]);
           } else if (!res && !resource.isLoading()) {
             accumulated.set([]);
           }
         });
 
-        state[field.key] = { searchTerm, page, accumulated, resource };
+        const includeKey = field.include || (field.dataPath ? field.dataPath.split('/').pop() : '');
+        state[field.key] = { searchTerm, page, accumulated, resource, includeKey: includeKey || '' };
       });
 
     this.depsState.set(state);
@@ -148,8 +177,11 @@ export abstract class BaseIdComponent {
           value: i.id,
         }));
 
-        const res = state.resource.value();
-        if (res && state.page() < res.last_page) {
+        const res = state.resource.value() as any;
+        const includeKey = field.include || (field.dataPath ? field.dataPath.split('/').pop() : '');
+        const entityData = includeKey && res ? res[includeKey] : null;
+
+        if (entityData && state.page() < entityData.last_page) {
           options.push({ label: null, value: null }); // Virtual scroll trigger
         }
 
@@ -251,12 +283,17 @@ export abstract class BaseIdComponent {
     const state = this.depsState()[event.key];
     if (!state || state.resource.isLoading()) return;
 
-    const res = state.resource.value();
+    const res = state.resource.value() as any;
+    if (!res) return;
+
+    const includeKey = state.includeKey;
+    const entityData = includeKey && res ? res[includeKey] : null;
+
     const lastVisible = event.event.last;
     const currentCount = state.accumulated().length;
 
-    if (res && lastVisible >= currentCount - 1 && state.page() < res.last_page) {
-      state.page.update((p) => p + 1);
+    if (entityData && lastVisible >= currentCount - 1 && state.page() < entityData.last_page) {
+      state.page.update((p: number) => p + 1);
     }
   }
 }

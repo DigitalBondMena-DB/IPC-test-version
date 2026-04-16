@@ -9,6 +9,7 @@ import { MessageService } from 'primeng/api';
 import { LucideAngularModule, Settings } from 'lucide-angular';
 import { BaseIdComponent } from '@shared/base/base-id-component';
 import { getCommonRelationalFields, COMMON_FIELD_KEYS } from '@shared/config/common-fields.config';
+import { FormCascadeUtil } from '@shared/utils/form-cascade.util';
 
 @Component({
   selector: 'app-survey-setup',
@@ -104,31 +105,12 @@ export class SurveySetupComponent extends BaseIdComponent {
   // Transform API response to match form keys and "Select All" logic
   transformResponse(data: any): any {
     if (!data) return {};
-    const transformed: any = {
-      ...data,
-      category_ids: data.categories?.map((c: any) => c.id) || [],
-      weighting_type: data.weighting_type || 'manual',
-      deadline_hours: data.deadline_hours?.toString() || '',
-    };
-
-    // Map relational ID arrays and handle "Select All" states
-    const relations = [
-      { key: COMMON_FIELD_KEYS.AUTHORITY, apiPath: 'authorities', selectAllKey: 'all_authorities' },
-      { key: COMMON_FIELD_KEYS.SECTOR, apiPath: 'sectors', selectAllKey: 'all_sectors' },
-      { key: COMMON_FIELD_KEYS.GOVERNORATE, apiPath: 'governorates', selectAllKey: 'all_governorates' },
-      { key: COMMON_FIELD_KEYS.DIVISION, apiPath: 'divisions', selectAllKey: 'all_divisions' },
-      { key: COMMON_FIELD_KEYS.FACILITY, apiPath: 'facilities', selectAllKey: 'all_facilities' },
-    ];
-
-    relations.forEach((rel) => {
-      // If "Select All" flag is true in API, set the specific form key to ['SELECT_ALL']
-      if (data[rel.selectAllKey]) {
-        transformed[rel.key] = ['SELECT_ALL'];
-      } else if (data[rel.apiPath] && Array.isArray(data[rel.apiPath])) {
-        // Otherwise map the IDs
-        transformed[rel.key] = data[rel.apiPath].map((item: any) => item.id);
-      }
-    });
+    const transformed = FormCascadeUtil.transformResponse(data, this.rawFields);
+    
+    // Additional custom survey mappings
+    transformed.category_ids = data.categories?.map((c: any) => c.id) || [];
+    transformed.weighting_type = data.weighting_type || 'manual';
+    transformed.deadline_hours = data.deadline_hours?.toString() || '';
 
     return transformed;
   }
@@ -141,42 +123,15 @@ export class SurveySetupComponent extends BaseIdComponent {
 
   onSubmit(data: any) {
     this.isSubmitting.set(true);
-    const deadlineHours = data.deadline_hours ? parseInt(data.deadline_hours, 10) : 0;
+    let payload = FormCascadeUtil.preparePayload(data, this.rawFields);
 
-    let payload: any = { ...data };
-
+    // Custom survey deadline handling
+    const deadlineHours = payload.deadline_hours ? parseInt(payload.deadline_hours, 10) : 0;
     if (deadlineHours > 0) {
       payload.deadline_hours = deadlineHours;
     } else {
       delete payload.deadline_hours;
     }
-
-    // Standardize select/multiselect and handle "Select All"
-    this.rawFields.forEach((field: any) => {
-      const value = payload[field.key];
-      const sendAs = field.sendAs || 'array';
-
-      if ((field.type === 'select' || field.type === 'multiselect') && value !== undefined) {
-        // Handle formatting based on sendAs property
-        if (sendAs === 'array') {
-          if (value !== null && value !== '' && !Array.isArray(value)) {
-            payload[field.key] = [value];
-          }
-        } else if (sendAs === 'single') {
-          if (Array.isArray(value)) {
-            payload[field.key] = value.length > 0 ? value[0] : null;
-          }
-        }
-
-        // Handle SELECT_ALL
-        if (field.hasSelectAll && field.selectAllKey && Array.isArray(payload[field.key])) {
-          if (payload[field.key].includes('SELECT_ALL')) {
-            delete payload[field.key];
-            payload[field.selectAllKey] = true;
-          }
-        }
-      }
-    });
 
     const obs = this.id()
       ? this.surveyService.updateSurvey(this.id()!, payload)

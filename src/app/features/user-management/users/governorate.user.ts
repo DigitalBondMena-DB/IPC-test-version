@@ -37,6 +37,7 @@ export class GovernorateUser extends BaseUser {
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
+        include: 'authorities',
         hasSelectAll: true,
         selectAllKey: 'all_authorities',
         isDisabledWhenEdit: true,
@@ -51,6 +52,7 @@ export class GovernorateUser extends BaseUser {
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.DIVISIONS,
+        include: 'divisions',
         hasSelectAll: true,
         selectAllKey: 'all_divisions',
         dependsOn: 'authority_ids',
@@ -65,6 +67,7 @@ export class GovernorateUser extends BaseUser {
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.GOVERNORATES,
+        include: 'governorates',
         dependsOn: 'authority_ids',
       },
     ];

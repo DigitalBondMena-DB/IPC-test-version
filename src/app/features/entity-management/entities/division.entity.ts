@@ -32,7 +32,7 @@ export class DivisionEntity extends BaseEntity {
       {
         key: 'authority_ids',
         label: 'Authority Name',
-        type: 'multiselect',
+        type: 'select',
         placeholder: 'Select authority name...',
         validators: [Validators.required],
         roles: ['super_admin'],
@@ -40,6 +40,7 @@ export class DivisionEntity extends BaseEntity {
         filter: true,
         virtualScroll: true,
         dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
+        include: 'authorities',
         hasSelectAll: true,
         selectAllKey: 'all_authorities',
         isDisabledWhenEdit: true,
