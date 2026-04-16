@@ -10,7 +10,7 @@ export const getCommonRelationalFields = (overrides: Partial<IFormField> = {}): 
   {
     key: COMMON_FIELD_KEYS.AUTHORITY,
     label: 'Authority Name',
-    type: 'multiselect',
+    type: 'select',
     placeholder: 'Select Authority...',
     validators: [Validators.required],
     colSpan: 'col-span-1',
@@ -18,8 +18,6 @@ export const getCommonRelationalFields = (overrides: Partial<IFormField> = {}): 
     virtualScroll: true,
     dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
     include: 'authorities',
-    hasSelectAll: true,
-    selectAllKey: 'all_authorities',
     ...overrides,
   },
   {
