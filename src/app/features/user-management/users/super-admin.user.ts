@@ -24,20 +24,7 @@ export class SuperAdminUser extends BaseUser {
   override readonly entityEndpoint = API_CONFIG.ENDPOINTS.DIVISIONS;
   override getRoleFields(isEdit?: boolean): IFormField[] {
     return [
-      {
-        key: 'division_ids',
-        label: 'Division Name',
-        type: 'multiselect',
-        placeholder: 'Select division name...',
-        validators: [Validators.required],
-        colSpan: 'col-span-1',
-        filter: true,
-        virtualScroll: true,
-        dataPath: API_CONFIG.ENDPOINTS.DIVISIONS,
-        include: 'divisions',
-        hasSelectAll: true,
-        selectAllKey: 'all_divisions',
-      },
+      
     ];
   }
 }
