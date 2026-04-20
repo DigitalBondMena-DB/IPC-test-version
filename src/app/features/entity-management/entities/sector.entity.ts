@@ -13,7 +13,7 @@ export class SectorEntity extends BaseEntity {
   override readonly columns = [
     { field: 'name', header: 'Name', sortable: true },
     { field: 'authority', header: 'Authority', sortable: true, type: 'text' },
-    { field: 'governorates', header: 'Governorate', sortable: true, type: 'text' },
+    { field: 'governorates_choice', header: 'Governorate', sortable: true, type: 'text' },
     { field: 'updated_at', header: 'Last Update', sortable: true, type: 'date' },
     { field: 'updated_by', header: 'Updated By', sortable: true },
     { field: 'is_active', header: 'Actions', type: 'toggle', customClass: 'justify-end' },
