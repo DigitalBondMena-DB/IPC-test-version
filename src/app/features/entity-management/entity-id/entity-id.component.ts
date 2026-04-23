@@ -93,14 +93,6 @@ export class EntityIdComponent extends BaseIdComponent {
         this._MessageService.add({ summary: 'Success', detail: 'Saved successfully' });
         this.router.navigate([this.config.navPath]);
       },
-      error: (err) => {
-        this.isSubmitting.set(false);
-        this._MessageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: err?.error?.message || 'Failed to save',
-        });
-      },
     });
   }
 

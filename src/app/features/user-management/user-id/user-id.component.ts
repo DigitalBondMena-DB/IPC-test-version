@@ -66,7 +66,7 @@ export class UserIdComponent extends BaseIdComponent {
   userResource = this.isEdit()
     ? this._Service.getUserById(this.config.endpoint, this.config.userType, this.id()!)
     : null;
-    
+
   userData = computed(() => {
     const data = this.userResource?.value();
     if (!data) return {};
@@ -115,14 +115,6 @@ export class UserIdComponent extends BaseIdComponent {
           detail: `User ${id ? 'updated' : 'created'} successfully`,
         });
         this.router.navigate([this.config.navPath]);
-      },
-      error: (err) => {
-        this.isSubmitting.set(false);
-        this._MessageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: err?.error?.message || `Failed to ${id ? 'update' : 'create'} user`,
-        });
       },
     });
   }

@@ -23,20 +23,21 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         const now = Date.now();
         if (now - lastAuthErrorTime > AUTH_ERROR_THROTTLE_MS) {
           lastAuthErrorTime = now;
-          
+
           const summary = error.status === 401 ? 'Unauthenticated' : 'Forbidden';
-          const detail = error.status === 401 
-            ? 'Your session has ended. Please login again.' 
-            : 'You do not have permission to access this resource.';
+          const detail =
+            error.status === 401
+              ? 'Your session has ended. Please login again.'
+              : 'You do not have permission to access this resource.';
 
           _MessageService.add({
             severity: 'error',
             summary,
             detail,
-            life: 5000
+            life: 5000,
           });
         }
-        
+
         _AuthService.logout();
         return throwError(() => error);
       }
@@ -53,8 +54,19 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
           error.error?.message || error.error?.error || error.message || 'Server Internal Error';
       }
 
-      // 3. Display Global Toast Notification (except for 401/403 handled above)
       if (error.status !== 401 && error.status !== 403) {
+        const errorMessages: string[] = Object.values(error.error.errors);
+        if (Array.isArray(errorMessages) && errorMessages.length > 0) {
+          errorMessages.forEach((message) => {
+            _MessageService.add({
+              severity: 'error',
+              summary: `Error ${error.status || ''}`,
+              detail: message,
+              life: 5000,
+            });
+          });
+        }
+
         _MessageService.add({
           severity: 'error',
           summary: `Error ${error.status || ''}`,
