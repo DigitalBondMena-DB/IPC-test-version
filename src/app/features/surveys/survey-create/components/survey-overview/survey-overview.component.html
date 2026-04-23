@@ -67,7 +67,8 @@
           <div class="flex items-center justify-between text-[#16A34A]">
             <span class="to-black-400 font-medium">Total Weight</span>
             <span class="flex items-center gap-1 font-semibold"
-              >100% <lucide-angular [img]="checkIcon" size="18"
+              >{{ 100 - (overviewData()?.remaining_weight ?? 0) }}%
+              <lucide-angular [img]="checkIcon" size="18"
             /></span>
           </div>
         </div>

@@ -11,6 +11,7 @@ export interface SurveyOverview {
   is_active: boolean;
   divisions: string[];
   totals: SurveyTotals;
+  remaining_weight: number;
   domains: SurveyDomain[];
   high_risk_summary: HighRiskSummary;
   logic_summary: LogicSummary;
