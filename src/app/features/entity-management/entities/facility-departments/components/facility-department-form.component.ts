@@ -74,7 +74,6 @@ export class FacilityDepartmentFormComponent extends BaseIdComponent {
   readonly isLoading = computed(() => (this.entityResource ? this.entityResource.isLoading() : false));
 
   readonly departmentsResource = this._HttpService.get<any>('departments');
-  readonly sectorsResource = this._HttpService.get<any>('sectors');
 
   readonly groupValidators: ValidatorFn[] = [(control: AbstractControl): ValidationErrors | null => {
     const mainDept = control.get('main_department_id')?.value;
@@ -116,10 +115,9 @@ export class FacilityDepartmentFormComponent extends BaseIdComponent {
       }
     });
 
-    // Populate standalone dropdowns (sectors and departments)
+    // Populate standalone dropdowns (departments)
     effect(() => {
       const deptsRes = this.departmentsResource.value();
-      const sectorsRes = this.sectorsResource.value();
       
       let needsUpdate = false;
       const currentFields = this.rawFields();
@@ -131,14 +129,6 @@ export class FacilityDepartmentFormComponent extends BaseIdComponent {
           if (JSON.stringify(f.options) !== JSON.stringify(options)) {
             needsUpdate = true;
             return { ...f, options, loading: this.departmentsResource.isLoading() };
-          }
-        }
-        if (f.key === 'sector_id' && sectorsRes) {
-          const sectors = Array.isArray(sectorsRes) ? sectorsRes : (sectorsRes.data || []);
-          const options = sectors.map((s: any) => ({ label: s.name, value: s.id }));
-          if (JSON.stringify(f.options) !== JSON.stringify(options)) {
-            needsUpdate = true;
-            return { ...f, options, loading: this.sectorsResource.isLoading() };
           }
         }
         return f;

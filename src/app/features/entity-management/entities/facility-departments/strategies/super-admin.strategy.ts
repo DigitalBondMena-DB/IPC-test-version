@@ -8,14 +8,26 @@ export class SuperAdminFormStrategy implements FacilityDepartmentFormStrategy {
   getFields(): IFormField[] {
     return [
       {
+        key: 'authority_ids',
+        label: 'Authority',
+        type: 'select',
+        placeholder: 'Select authority',
+        validators: [Validators.required],
+        filter: true,
+        dataPath: API_CONFIG.ENDPOINTS.AUTHORITIES,
+        colSpan: 'col-span-1',
+      },
+      {
         key: 'sector_id',
         label: 'Sector',
         type: 'select',
         placeholder: 'Select sector',
         validators: [Validators.required],
         filter: true,
+        dataPath: API_CONFIG.ENDPOINTS.SECTORS,
+        dependsOn: 'authority_ids',
+        disabled: true,
         colSpan: 'col-span-1',
-        options: [],
       },
       {
         key: 'governorate_id',
@@ -54,7 +66,7 @@ export class SuperAdminFormStrategy implements FacilityDepartmentFormStrategy {
       {
         key: 'name',
         label: 'Department Name',
-        type: 'text', 
+        type: 'text',
         placeholder: 'Search or type name',
         validators: [Validators.required],
         disabled: true, // Disabled until main_department_id is selected
@@ -74,7 +86,12 @@ export class SuperAdminFormStrategy implements FacilityDepartmentFormStrategy {
   ): void {
     const updatedFields = [...currentFields];
 
-    if (key === 'sector_id') {
+    if (key === 'authority_ids') {
+      this.updateFieldState(updatedFields, 'sector_id', !value);
+      if (!value) {
+        form.get('sector_id')?.setValue(null);
+      }
+    } else if (key === 'sector_id') {
       this.updateFieldState(updatedFields, 'governorate_id', !value);
       if (!value) {
         form.get('governorate_id')?.setValue(null);
