@@ -18,7 +18,6 @@ import { BaseIdComponent } from '@shared/base/base-id-component';
 
 @Component({
   selector: 'app-entity-id',
-  standalone: true,
   imports: [CommonModule, BPageHeaderComponent, BFormBuilderComponent],
   templateUrl: './entity-id.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -81,17 +80,20 @@ export class EntityIdComponent extends BaseIdComponent {
 
     const obs = this.isEdit()
       ? this._Service.updateEntity(
-          this.config.endpoint,
-          this.config.entity_type,
-          this.id()!,
-          payload,
-        )
+        this.config.endpoint,
+        this.config.entity_type,
+        this.id()!,
+        payload,
+      )
       : this._Service.createEntity(this.config.endpoint, this.config.entity_type, payload);
 
     obs.subscribe({
       next: () => {
         this._MessageService.add({ summary: 'Success', detail: 'Saved successfully' });
         this.router.navigate([this.config.navPath]);
+      },
+      error: () => {
+        this.isSubmitting.set(false);
       },
     });
   }

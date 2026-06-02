@@ -55,24 +55,31 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       if (error.status !== 401 && error.status !== 403) {
-        const errorMessages: string[] = Object.values(error.error.errors);
-        if (Array.isArray(errorMessages) && errorMessages.length > 0) {
-          errorMessages.forEach((message) => {
-            _MessageService.add({
-              severity: 'error',
-              summary: `Error ${error.status || ''}`,
-              detail: message,
-              life: 5000,
+        let hasSpecificErrors = false;
+
+        if (error.error?.errors) {
+          const errorMessages = Object.values(error.error.errors).flat() as string[];
+          if (Array.isArray(errorMessages) && errorMessages.length > 0) {
+            hasSpecificErrors = true;
+            errorMessages.forEach((message) => {
+              _MessageService.add({
+                severity: 'error',
+                summary: `Error ${error.status || ''}`,
+                detail: message,
+                life: 5000,
+              });
             });
-          });
+          }
         }
 
-        _MessageService.add({
-          severity: 'error',
-          summary: `Error ${error.status || ''}`,
-          detail: errorMessage,
-          life: 5000,
-        });
+        if (!hasSpecificErrors) {
+          _MessageService.add({
+            severity: 'error',
+            summary: `Error ${error.status || ''}`,
+            detail: errorMessage,
+            life: 5000,
+          });
+        }
       }
 
       // 4. IMPORTANT: Re-throw the error so HttpClient/HttpResource can detect failure
