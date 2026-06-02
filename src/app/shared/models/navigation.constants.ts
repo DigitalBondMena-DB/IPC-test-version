@@ -8,8 +8,9 @@ export interface SidebarFooterConfig {
 export const ALL_MENU_ITEMS: NavItem[] = [
   { label: 'User Management', icon: 'Dashboard', isSection: true },
   { label: 'Overview', routerLink: '/dashboard' },
-  { label: 'Divisions', roles: ['super_admin', 'authority'], routerLink: '/dashboard/divisions' },
   { label: 'Main Departments', roles: ['super_admin'], routerLink: '/dashboard/departments' },
+  { label: 'Facility Departments', roles: ['super_admin', 'facility'], routerLink: '/dashboard/facility-departments' },
+  { label: 'Divisions', roles: ['super_admin', 'authority'], routerLink: '/dashboard/divisions' },
   { label: 'Authorities', routerLink: '/dashboard/authorities', roles: ['super_admin'] },
   {
     label: 'Governorates',

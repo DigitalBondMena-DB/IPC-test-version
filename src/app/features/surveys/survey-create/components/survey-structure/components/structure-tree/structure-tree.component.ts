@@ -89,6 +89,10 @@ export class StructureTreeComponent {
     this.state.toggleDomainNa(node);
   }
 
+  toggleAsksDepartment(node: FormGroup) {
+    this.state.toggleAsksDepartment(node);
+  }
+
   canAddSubdomain(node: FormGroup): boolean {
     return this.state.canAddSubdomain(node);
   }

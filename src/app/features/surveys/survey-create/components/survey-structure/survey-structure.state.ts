@@ -136,6 +136,7 @@ export class SurveyStructureStateService {
       isExpanded: [data.isExpanded !== undefined ? data.isExpanded : true],
       lastTitle: [data.lastTitle !== undefined ? data.lastTitle : titleValue],
       allow_na: [data.allow_na ?? data.is_na ?? false],
+      asks_department: [data.asks_department ?? false],
       questions: this.fb.array((data.questions || []).map((q: any) => this.fb.group(q))),
       sub_domains: this.fb.array(subdomainsData.map((sd: any) => this.createDomainFormGroup(sd))),
     });
@@ -303,6 +304,28 @@ export class SurveyStructureStateService {
     }
   }
 
+  toggleAsksDepartment(node: FormGroup) {
+    const id = node.get('id')?.value;
+    const asksDepartment = node.get('asks_department')?.value;
+
+    if (id) {
+      this.surveyService.toggleAsksDepartment(id).subscribe({
+        error: (err) => {
+          // Revert state on error
+          node.get('asks_department')?.setValue(!asksDepartment, { emitEvent: false });
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: err?.error?.message || 'Failed to toggle asks department status',
+          });
+        },
+      });
+    } else {
+      // For new domains, just sync the whole object which includes the asks_department state
+      this.syncDomains();
+    }
+  }
+
   duplicateDomain(id: string | number) {
     console.log('Duplicating domain with ID:', id);
     if (id === null || id === undefined || id === '') {
@@ -341,6 +364,7 @@ export class SurveyStructureStateService {
         title: node.get('title')?.value,
         weight: node.get('weight')?.value || 0,
         allow_na: node.get('allow_na')?.value || false,
+        asks_department: node.get('asks_department')?.value || false,
         order: i + 1,
         questions: this.getQuestions(node).controls.map((q: any, qi: number) => ({
           text: q.get('text')?.value,

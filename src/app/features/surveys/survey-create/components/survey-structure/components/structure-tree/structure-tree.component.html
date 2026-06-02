@@ -166,6 +166,15 @@
               (change)="toggleDomainNa(domainNode)"
             />
 
+            @if (level > 0) {
+              <app-b-checkbox
+                [formControl]="domainNode.get('asks_department')"
+                label="Ask Department"
+                class="scale-75 -mt-3.5"
+                (change)="toggleAsksDepartment(domainNode)"
+              />
+            }
+
             <input
               [formControl]="domainNode.get('title')"
               (blur)="onNodeBlur(domainNode)"

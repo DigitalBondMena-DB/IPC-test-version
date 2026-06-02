@@ -57,6 +57,7 @@
               [type]="field.type"
               class="placeholder:text-gray-704"
               [placeholder]="field.placeholder || ''"
+              [options]="field.options || []"
               [formControlName]="field.key"
               [hasError]="!!getErrorMessage(field)"
               [errorMessage]="getErrorMessage(field)"

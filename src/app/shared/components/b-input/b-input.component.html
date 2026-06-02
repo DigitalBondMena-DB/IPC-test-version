@@ -10,7 +10,17 @@
       (input)="onInput($event)"
       (blur)="onBlur()"
       [disabled]="disabled()"
+      [attr.list]="options() && options().length ? id() + '_datalist' : null"
+      autocomplete="off"
     />
+
+    @if (options() && options().length > 0) {
+      <datalist [id]="id() + '_datalist'">
+        @for (option of options(); track option.value) {
+          <option [value]="option.label || option.value"></option>
+        }
+      </datalist>
+    }
 
     @if (icon()) {
       <lucide-angular [img]="icon()" size="20" class="my-icon stroke-gray-704" />

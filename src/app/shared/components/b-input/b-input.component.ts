@@ -28,6 +28,7 @@ export class BInputComponent implements ControlValueAccessor {
   eyeIcon = input<any>(Eye);
   eyeOffIcon = input<any>(EyeOff);
   errorMessage = input<string | null>(null);
+  options = input<any[]>([]);
 
   value = signal<string>('');
   disabled = signal<boolean>(false);

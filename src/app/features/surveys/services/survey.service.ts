@@ -50,6 +50,10 @@ export class SurveyService extends HttpService {
     return this.post<any>(`${API_CONFIG.ENDPOINTS.SURVEYS.DOMAINS}/${id}/toggle-na`, {});
   }
 
+  toggleAsksDepartment(id: string | number): Observable<any> {
+    return this.post<any>(`${API_CONFIG.ENDPOINTS.SURVEYS.DOMAINS}/${id}/toggle-asks-department`, {});
+  }
+
   duplicateDomain(id: string | number): Observable<any> {
     return this.post<any>(`${API_CONFIG.ENDPOINTS.SURVEYS.DOMAINS}/${id}/duplicate`, {});
   }

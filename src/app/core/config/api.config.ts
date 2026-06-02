@@ -5,6 +5,7 @@ export const API_CONFIG = {
     HOME: 'home',
     DIVISIONS: 'divisions',
     DEPARTMENTS: 'departments',
+    FACILITY_DEPARTMENTS: 'facility-departments',
     GOVERNORATES: 'governorates',
     SECTORS: 'sectors',
     AUTHORITIES: 'authorities',
