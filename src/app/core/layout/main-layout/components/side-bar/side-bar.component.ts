@@ -40,6 +40,7 @@ export class SideBarComponent {
   private readonly userRole = computed<Role>(() => this._AuthService.role());
   isCollapsed = signal(false);
   userData = computed(() => this._AuthService.userData());
+  isSupervisor = computed(() => this._AuthService.isSupervisor());
 
   readonly icons: Record<string, LucideIconData> = {
     Dashboard: House,
@@ -98,9 +99,16 @@ export class SideBarComponent {
   logout() {
     this._AuthService.logout();
   }
-  getVisibleItems(items: Role[]): boolean {
-    if (this.userRole() && items.length !== 0) {
-      return items.includes(this.userRole()!);
+  getVisibleItems(item: NavItem): boolean {
+    const roles = item.roles ?? [];
+    if (this.userRole() && roles.length !== 0) {
+      const hasRole = roles.includes(this.userRole()!);
+      if (!hasRole) return false;
+
+      if (item.requireSupervisor && this.userRole() === 'facility' && !this.isSupervisor()) {
+        return false;
+      }
+      return true;
     }
     return true;
   }

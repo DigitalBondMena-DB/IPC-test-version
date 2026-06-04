@@ -9,10 +9,12 @@ export interface NavItem {
   isSection?: boolean;
   isButton?: boolean;
   roles?: Role[];
+  requireSupervisor?: boolean;
 }
 export interface NavItemWithChildren {
   lable: string;
   icon: string;
   children: NavItem[];
   roles?: Role[];
+  requireSupervisor?: boolean;
 }

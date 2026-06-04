@@ -25,7 +25,7 @@
   <nav class="flex-1 py-2 overflow-y-auto custom-scrollbar">
     <div class="space-y-1">
       @for (item of internalMenuItems(); track $index) {
-        @if (getVisibleItems(item?.roles ?? [])) {
+        @if (getVisibleItems(item)) {
           <div>
             @if (item.isSection) {
               <div
@@ -89,7 +89,7 @@
               @if (item.expanded) {
                 <div class="ms-11 mt-1 space-y-1 border-s border-gray-100 animate-slide-down">
                   @for (child of item.children; track child.label) {
-                    @if (getVisibleItems(child?.roles ?? [])) {
+                    @if (getVisibleItems(child)) {
                       <a
                         [routerLink]="child.routerLink"
                         routerLinkActive="text-primary-500 font-semibold"

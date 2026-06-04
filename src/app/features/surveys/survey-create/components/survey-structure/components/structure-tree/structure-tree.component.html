@@ -137,6 +137,7 @@
             <button
               (click)="toggleNode(domainNode)"
               class="p-1 hover:bg-gray-100 rounded transition-colors"
+              [class.invisible]="getSubdomains(domainNode).length === 0 && getQuestions(domainNode).length === 0"
             >
               <lucide-angular
                 [img]="chevronUpIcon"
@@ -166,7 +167,7 @@
               (change)="toggleDomainNa(domainNode)"
             />
 
-            @if (level > 0) {
+            @if (level > 0 || getSubdomains(domainNode).length === 0) {
               <app-b-checkbox
                 [formControl]="domainNode.get('asks_department')"
                 label="Ask Department"

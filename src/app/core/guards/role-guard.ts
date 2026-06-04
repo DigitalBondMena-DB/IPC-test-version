@@ -12,6 +12,15 @@ export const roleGuard: CanMatchFn = (route, segments) => {
   const userRole = authService.role();
 
   if (userRole && allowedRoles.includes(userRole)) {
+    const requireSupervisor = route.data?.['requireSupervisor'] as boolean;
+    if (requireSupervisor && userRole === 'facility' && !authService.isSupervisor()) {
+      messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: `Access denied. Facility users must be supervisors to access this route.`,
+      });
+      return false;
+    }
     return true;
   }
   messageService.add({

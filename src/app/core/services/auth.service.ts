@@ -13,6 +13,7 @@ export class AuthService {
   public userData = this._userData.asReadonly();
   public role = computed<Role>(() => this._userData()?.user.role as Role);
   public hasFullAccess = computed(() => !!this._userData()?.user?.has_full_access);
+  public isSupervisor = computed(() => !!this._userData()?.user?.is_supervisor);
   isAuthenticated = computed(() => !!this._userData()?.token);
   constructor() {
     this.initializeFromStorage();
