@@ -22,6 +22,8 @@ export const ALL_MENU_ITEMS: NavItem[] = [
   {
     label: 'User Management',
     expanded: false,
+    requireSupervisor: true,
+    roles: ['super_admin', 'authority', 'governorate', 'facility'],
     children: [
       { label: 'Super Admin', roles: ['super_admin'], routerLink: '/dashboard/super-admin-users' },
       {
