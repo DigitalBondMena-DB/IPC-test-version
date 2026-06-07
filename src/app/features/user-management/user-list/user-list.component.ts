@@ -22,7 +22,7 @@ import { BaseUser } from '../base/base-user';
     <app-b-page-header
       [title]="config.title"
       [createButtonLabel]="'Create ' + config.entityLabel"
-      [createButtonRoles]="['super_admin', 'authority']"
+      [createButtonRoles]="['super_admin', 'authority','facility']"
       (searchChange)="onSearch($event)"
       [showSearch]="true"
       (createClick)="onCreate()"
