@@ -6,7 +6,7 @@ import { API_CONFIG } from '@/core/config/api.config';
 import { SurveyService } from '@features/surveys/services/survey.service';
 import { SurveyLogicService } from '@features/surveys/services/survey-logic.service';
 import { MessageService, TreeNode } from 'primeng/api';
-import { startWith, distinctUntilChanged, pairwise, Observable } from 'rxjs';
+import { distinctUntilChanged, pairwise, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -16,7 +16,6 @@ export class ConditionalLogicStateService {
   private readonly surveyService = inject(SurveyService);
   private readonly logicService = inject(SurveyLogicService);
   private readonly messageService = inject(MessageService);
-  private readonly router = inject(Router);
 
   readonly activeSurveyId = signal<string | null>(null);
   private readonly route = inject(ActivatedRoute);
@@ -55,7 +54,7 @@ export class ConditionalLogicStateService {
   });
 
   readonly allQuestions = signal<any[]>([]);
-  
+
   // Optimization: Question lookup map O(1)
   readonly questionsMap = computed(() => {
     const map = new Map<number, any>();
@@ -66,7 +65,7 @@ export class ConditionalLogicStateService {
   readonly domainTreeNodes = signal<TreeNode[]>([]);
   readonly selectedTreeNode = signal<any>(null);
   readonly currentSubdomainQuestions = signal<any[]>([]);
-  
+
   // Refactored: Track editing IDs instead of counting FormGroups internally
   readonly editingIds = signal<Set<number | string>>(new Set());
 
@@ -182,7 +181,7 @@ export class ConditionalLogicStateService {
       ui_action_type: [uiActionType, Validators.required],
       target_question_ids: [
         ruleData?.target_question_ids ||
-          (ruleData?.target_question_id ? [ruleData.target_question_id] : []),
+        (ruleData?.target_question_id ? [ruleData.target_question_id] : []),
       ],
       target_answer_options: [ruleData?.target_answer_options || []],
       alert_type: [alertType],

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, effect, computed } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, FormControl, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MessageService, TreeNode } from 'primeng/api';
 import { SurveyService } from '@features/surveys/services/survey.service';
@@ -125,6 +125,25 @@ export class SurveyStructureStateService {
     });
   }
 
+  createQuestionFormGroup(data: any = {}): FormGroup {
+    return this.fb.group({
+      id: [data.id || null],
+      domain_id: [data.domain_id || null],
+      text: [data.text || '', Validators.required],
+      description: [data.description || ''],
+      hint: [data.hint || null],
+      type: [data.type || 'radio'],
+      is_preliminary: [data.is_preliminary ?? false],
+      is_scored: [data.is_scored ?? true],
+      allow_any_level: [data.allow_any_level ?? false],
+      max_score: [data.max_score ?? 0],
+      weight: [data.weight ?? 0],
+      meta_data: [data.meta_data || null],
+      logic_rules: data.logic_rules instanceof FormControl ? data.logic_rules : new FormControl(data.logic_rules || []),
+      affected_by_rules: data.affected_by_rules instanceof FormControl ? data.affected_by_rules : new FormControl(data.affected_by_rules || []),
+    });
+  }
+
   createDomainFormGroup(data: any = {}): FormGroup {
     const titleValue = data.title || '';
     const subdomainsData = data.sub_domains || data.children || [];
@@ -137,7 +156,7 @@ export class SurveyStructureStateService {
       lastTitle: [data.lastTitle !== undefined ? data.lastTitle : titleValue],
       allow_na: [data.allow_na ?? data.is_na ?? false],
       asks_department: [data.asks_department ?? false],
-      questions: this.fb.array((data.questions || []).map((q: any) => this.fb.group(q))),
+      questions: this.fb.array((data.questions || []).map((q: any) => this.createQuestionFormGroup(q))),
       sub_domains: this.fb.array(subdomainsData.map((sd: any) => this.createDomainFormGroup(sd))),
     });
   }
@@ -268,13 +287,31 @@ export class SurveyStructureStateService {
             ? questionsDataArray.find((qd: any) => qd.id === qId)
             : questionsDataArray.find((qd: any) => qd.text === qTitle);
 
-          if (qData && qData.id) {
-            if (qGroup.get('id')) {
-              if (!qGroup.get('id')?.value) {
-                qGroup.get('id')?.setValue(qData.id, { emitEvent: false });
+          if (qData) {
+            if (qData.id) {
+              if (qGroup.get('id')) {
+                if (!qGroup.get('id')?.value) {
+                  qGroup.get('id')?.setValue(qData.id, { emitEvent: false });
+                }
+              } else {
+                qGroup.addControl('id', this.fb.control(qData.id), { emitEvent: false });
               }
-            } else {
-              qGroup.addControl('id', this.fb.control(qData.id), { emitEvent: false });
+            }
+
+            if (qData.logic_rules !== undefined) {
+              if (qGroup.get('logic_rules')) {
+                qGroup.get('logic_rules')?.setValue(qData.logic_rules, { emitEvent: false });
+              } else {
+                qGroup.addControl('logic_rules', new FormControl(qData.logic_rules), { emitEvent: false });
+              }
+            }
+
+            if (qData.affected_by_rules !== undefined) {
+              if (qGroup.get('affected_by_rules')) {
+                qGroup.get('affected_by_rules')?.setValue(qData.affected_by_rules, { emitEvent: false });
+              } else {
+                qGroup.addControl('affected_by_rules', new FormControl(qData.affected_by_rules), { emitEvent: false });
+              }
             }
           }
         });
@@ -366,15 +403,28 @@ export class SurveyStructureStateService {
         allow_na: node.get('allow_na')?.value || false,
         asks_department: node.get('asks_department')?.value || false,
         order: i + 1,
-        questions: this.getQuestions(node).controls.map((q: any, qi: number) => ({
-          text: q.get('text')?.value,
-          description: q.get('description')?.value || '',
-          is_scored: q.get('is_scored')?.value ?? true,
-          order: qi + 1,
-          max_score: q.get('max_score')?.value || 0,
-          meta_data: q.get('meta_data')?.value || null,
-          type: q.get('type')?.value || 'radio',
-        })),
+        questions: this.getQuestions(node).controls.map((q: any, qi: number) => {
+          const qGroup = q as FormGroup;
+          const qVal: any = {
+            id: qGroup.get('id')?.value || undefined,
+            text: qGroup.get('text')?.value,
+            description: qGroup.get('description')?.value || '',
+            is_scored: qGroup.get('is_scored')?.value ?? true,
+            order: qi + 1,
+            max_score: qGroup.get('max_score')?.value || 0,
+            meta_data: qGroup.get('meta_data')?.value || null,
+            type: qGroup.get('type')?.value || 'radio',
+          };
+
+          const logicRules = qGroup.get('logic_rules')?.value;
+          if (logicRules && Array.isArray(logicRules) && logicRules.length > 0) {
+            qVal.logic_rules = logicRules;
+          } else if (logicRules && !Array.isArray(logicRules)) {
+            qVal.logic_rules = [logicRules];
+          }
+
+          return qVal;
+        }),
         sub_domains: this.collectDomains(this.getSubdomains(node)),
       };
     });
@@ -530,7 +580,7 @@ export class SurveyStructureStateService {
       const qGroup = this.getQuestions(targetNode).at(editIndex) as FormGroup;
       qGroup.patchValue(questionData);
     } else {
-      this.getQuestions(targetNode).push(this.fb.group(questionData));
+      this.getQuestions(targetNode).push(this.createQuestionFormGroup(questionData));
     }
 
     this.syncDomains();

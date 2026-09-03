@@ -13,6 +13,7 @@ export interface DomainPayload {
 }
 
 export interface DomainQuestion {
+  id?: number;
   text: string;
   description?: string;
   hint?: string;
